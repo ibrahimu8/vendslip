@@ -375,3 +375,73 @@ function showToast(msg) {
   t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 3000);
 }
+
+// --- Animations & Onboarding Tour Logic ---
+document.addEventListener('DOMContentLoaded', () => {
+  // Re-trigger CSS animations on load
+  document.body.style.opacity = '1';
+
+  // Check if user has seen the tour
+  const hasSeenTour = localStorage.getItem('vendslip_tour_seen');
+  
+  if (!hasSeenTour) {
+    setTimeout(() => {
+      startTour();
+    }, 1500); // Wait 1.5 seconds after page load to start the tour
+  }
+});
+
+const tourSteps = [
+  {
+    title: "Welcome to VendSlip",
+    text: "The fastest way to create professional receipts for WhatsApp and IG vendors. No sign-up required."
+  },
+  {
+    title: "Real-Time Generation",
+    text: "Just type your Business Name, Buyer details, and Items. The receipt on the right updates instantly as you type."
+  },
+  {
+    title: "One-Tap Sharing",
+    text: "When you're done, tap 'Share to WhatsApp' to send a high-res receipt image directly to your customer. Unlock Pro to remove the watermark!"
+  }
+];
+
+let currentTourStep = 0;
+
+function startTour() {
+  document.getElementById('tourOverlay').classList.add('active');
+  document.getElementById('tourBox').classList.add('active');
+  renderTourStep();
+}
+
+function renderTourStep() {
+  document.getElementById('tourTitle').textContent = tourSteps[currentTourStep].title;
+  document.getElementById('tourText').textContent = tourSteps[currentTourStep].text;
+  
+  const dots = document.querySelectorAll('.tour-dot');
+  dots.forEach((dot, index) => {
+    if (index === currentTourStep) dot.classList.add('active');
+    else dot.classList.remove('active');
+  });
+
+  const nextBtn = document.getElementById('tourNextBtn');
+  if (currentTourStep === tourSteps.length - 1) {
+    nextBtn.textContent = 'Start Using VendSlip';
+  } else {
+    nextBtn.textContent = 'Next';
+  }
+}
+
+document.getElementById('tourNextBtn').addEventListener('click', () => {
+  currentTourStep++;
+  if (currentTourStep < tourSteps.length) {
+    renderTourStep();
+  } else {
+    // End the tour
+    document.getElementById('tourOverlay').classList.remove('active');
+    document.getElementById('tourBox').classList.remove('active');
+    localStorage.setItem('vendslip_tour_seen', 'true');
+    // Show a welcome toast
+    showToast('You are ready to go!');
+  }
+});
