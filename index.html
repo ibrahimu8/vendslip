@@ -38,7 +38,7 @@
     </div>
 
     <div class="edit-col" id="editCol">
-      <div class="card">
+      <div class="card reveal-on-scroll">
         <div class="section-title">Business Details</div>
         <div class="input-group">
           <label>Business Name</label>
@@ -66,7 +66,7 @@
         </div>
       </div>
 
-      <div class="card">
+      <div class="card reveal-on-scroll">
         <div class="section-title">Items</div>
         <div id="itemsContainer">
           <div class="item-row" style="margin-bottom: 12px;">
@@ -89,12 +89,12 @@
         <button class="btn-outline" style="width: 100%; margin-top: 8px; border-style: dashed;" onclick="addItem()">+ Add Another Item</button>
       </div>
 
-      <div class="card">
+      <div class="card reveal-on-scroll">
         <div class="section-title">Payment Status</div>
         <div class="status-grid" id="statusGrid">
           <button class="status-btn active" data-status="Paid" onclick="setStatus(this)">PAID</button>
           <button class="status-btn" data-status="Part Payment" onclick="setStatus(this)">PART PAID</button>
-          <button class="status-btn" data-status="Pay on Delivery" onclick="setStatus(this)">P.O.D</button>
+          <button class="status-btn" data-status="Pay on Delivery" onclick="setStatus(this)">PAY ON DELIVERY</button>
         </div>
 
         <div class="input-row" style="margin-top: 16px;">
@@ -102,7 +102,7 @@
             <label>Delivery Fee</label>
             <input type="number" id="deliveryFee" value="2000" placeholder="0.00" oninput="updatePreview()">
           </div>
-          <div class="input-group">
+          <div class="input-group hidden" id="amountPaidWrapper">
             <label>Amount Paid So Far</label>
             <input type="number" id="amountPaid" value="0" placeholder="0.00" oninput="updatePreview()">
           </div>
@@ -141,7 +141,8 @@
             <div class="receipt-meta">
               <div>
                 <strong style="color: #0F172A; font-size: 1rem;" id="receiptBizName">Ada's Thrifts</strong><br>
-                <span id="receiptDate">Oct 24, 2023</span>
+                <span id="receiptDate">Oct 24, 2023</span><br>
+                <span style="font-size: 0.7rem; color: #94A3B8;">Ref: <span id="receiptRef">VS-XXXXX</span></span>
               </div>
               <div style="text-align: right;">
                 <span>Billed to:</span><br>
@@ -182,7 +183,7 @@
         </div>
       </div>
 
-      <div class="card" style="padding: 16px; margin-bottom: 16px;">
+      <div class="card reveal-on-scroll" style="padding: 16px; margin-bottom: 16px;">
         <label style="margin-bottom: 8px;">Receipt Theme</label>
         <div class="currency-wrap" id="themeWrap">
           <button class="currency-btn active" style="background: #10B981; border-color: #10B981; color: #fff;" onclick="setReceiptTheme('emerald', this)">Emerald</button>
@@ -193,7 +194,7 @@
         </div>
       </div>
 
-      <div class="input-row">
+      <div class="input-row reveal-on-scroll">
         <button class="btn-primary" onclick="downloadReceipt()" id="downloadBtn">Download HD Receipt</button>
         <button class="btn-primary" style="background: #25D366;" onclick="shareWhatsApp()">Share to WhatsApp</button>
       </div>
@@ -217,18 +218,19 @@
     </div>
   </div>
 
-  <div class="tour-overlay" id="tourOverlay"></div>
-  
-  <div class="tour-box" id="tourBox">
-    <h3 id="tourTitle">Welcome to VendSlip</h3>
-    <p id="tourText">The fastest way to create professional receipts for WhatsApp and IG vendors. No sign-up required.</p>
-    <div class="tour-nav">
-      <div class="tour-dots">
-        <div class="tour-dot active"></div>
-        <div class="tour-dot"></div>
-        <div class="tour-dot"></div>
+  <!-- Onboarding Bottom Sheet -->
+  <div class="tour-bottom-sheet" id="tourSheet">
+    <div class="tour-content">
+      <h3 id="tourTitle">Welcome to VendSlip</h3>
+      <p id="tourText">The fastest way to create professional receipts for WhatsApp and IG vendors. No sign-up required.</p>
+      <div class="tour-nav">
+        <div class="tour-dots">
+          <div class="tour-dot active"></div>
+          <div class="tour-dot"></div>
+          <div class="tour-dot"></div>
+        </div>
+        <button class="tour-btn" id="tourNextBtn">Next</button>
       </div>
-      <button class="tour-btn" id="tourNextBtn">Next</button>
     </div>
   </div>
 

@@ -4,6 +4,7 @@ let status = 'Paid';
 let isPro = false;
 let currentReceiptTheme = 'emerald';
 let savedLogoBase64 = null;
+let currentRef = '';
 
 // --- Init & Local Storage ---
 document.addEventListener('DOMContentLoaded', () => {
@@ -17,8 +18,8 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   loadSavedData();
+  generateRef(); // Create a new reference ID on load
 
-  // Paystack Redirect Listener
   const urlParams = new URLSearchParams(window.location.search);
   if (urlParams.has('pro_success') || urlParams.has('reference') || urlParams.has('trxref')) {
     if (!isPro) {
@@ -28,7 +29,6 @@ document.addEventListener('DOMContentLoaded', () => {
     window.history.replaceState({}, document.title, window.location.pathname);
   }
 
-  // Logo Upload Listeners
   document.getElementById('uploadLogoBtn').addEventListener('click', () => {
     if (!isPro) {
       document.getElementById('proModal').classList.add('active');
@@ -42,15 +42,26 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('removeLogoBtn').addEventListener('click', removeLogo);
 
   updatePreview();
+  setupScrollAnimations();
 
-  // Tour Logic
+  // Onboarding Tour
   const hasSeenTour = localStorage.getItem('vendslip_tour_seen');
   if (!hasSeenTour) {
     setTimeout(() => {
-      startTour();
-    }, 1500);
+      document.getElementById('tourSheet').classList.add('active');
+    }, 1000);
   }
 });
+
+function generateRef() {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let ref = 'VS-';
+  for (let i = 0; i < 5; i++) {
+    ref += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  currentRef = ref;
+  document.getElementById('receiptRef').textContent = ref;
+}
 
 function activatePro() {
   isPro = true;
@@ -155,10 +166,16 @@ function setStatus(btn) {
   status = btn.dataset.status;
   
   const bankForm = document.getElementById('bankDetailsForm');
+  const amountPaidWrapper = document.getElementById('amountPaidWrapper');
+  
   if (status === 'Paid') {
     bankForm.classList.add('hidden');
+    amountPaidWrapper.classList.add('hidden');
+    // Auto-fill amount paid if Paid
+    document.getElementById('amountPaid').value = document.getElementById('receiptTotal').textContent.replace(/[^0-9.]/g, '') || 0;
   } else {
     bankForm.classList.remove('hidden');
+    amountPaidWrapper.classList.remove('hidden');
   }
   updatePreview();
 }
@@ -231,16 +248,26 @@ function updatePreview() {
 
   const delivery = parseFloat(document.getElementById('deliveryFee').value) || 0;
   const total = subtotal + delivery;
-  const amountPaid = parseFloat(document.getElementById('amountPaid').value) || 0;
-  const balance = total - amountPaid;
-
+  
+  // Update total display first so the "Paid" auto-fill can read it
   document.getElementById('receiptSubtotal').textContent = formatMoney(subtotal);
   document.getElementById('receiptDelivery').textContent = formatMoney(delivery);
   document.getElementById('receiptTotal').textContent = formatMoney(total);
   document.getElementById('tabTotal').textContent = total.toLocaleString();
 
+  // Logic for Paid vs Part Paid
+  let amountPaid = 0;
+  if (status === 'Paid') {
+    amountPaid = total;
+    document.getElementById('amountPaid').value = total; // Sync input
+  } else {
+    amountPaid = parseFloat(document.getElementById('amountPaid').value) || 0;
+  }
+  
+  const balance = total - amountPaid;
+
   const stamp = document.getElementById('receiptStamp');
-  stamp.textContent = status;
+  stamp.textContent = status === 'Part Payment' ? 'PART PAID' : status.toUpperCase();
   
   const balRow = document.getElementById('receiptBalanceRow');
   if (status === 'Paid') {
@@ -338,7 +365,7 @@ async function downloadReceipt() {
   try {
     const canvas = await html2canvas(receipt, { scale: 3, backgroundColor: '#ffffff' });
     const link = document.createElement('a');
-    link.download = 'VendSlip-Receipt.png';
+    link.download = `VendSlip-${currentRef}.png`;
     link.href = canvas.toDataURL('image/png');
     link.click();
     showToast('Receipt saved to gallery!');
@@ -354,7 +381,7 @@ async function shareWhatsApp() {
   try {
     const canvas = await html2canvas(receipt, { scale: 3, backgroundColor: '#ffffff' });
     canvas.toBlob(async (blob) => {
-      const file = new File([blob], 'receipt.png', { type: 'image/png' });
+      const file = new File([blob], `VendSlip-${currentRef}.png`, { type: 'image/png' });
       
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
         await navigator.share({
@@ -364,7 +391,7 @@ async function shareWhatsApp() {
         });
       } else {
         const link = document.createElement('a');
-        link.download = 'VendSlip-Receipt.png';
+        link.download = `VendSlip-${currentRef}.png`;
         link.href = URL.createObjectURL(blob);
         link.click();
         showToast('Sharing not supported. Image downloaded instead.');
@@ -383,6 +410,21 @@ function showToast(msg) {
   setTimeout(() => t.classList.remove('show'), 3000);
 }
 
+// --- Scroll Animations ---
+function setupScrollAnimations() {
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('active');
+      }
+    });
+  }, { threshold: 0.1 });
+
+  document.querySelectorAll('.reveal-on-scroll').forEach((el) => {
+    observer.observe(el);
+  });
+}
+
 // --- Tour Logic ---
 const tourSteps = [
   {
@@ -391,47 +433,32 @@ const tourSteps = [
   },
   {
     title: "Real-Time Generation",
-    text: "Just type your Business Name, Buyer details, and Items. The receipt on the right updates instantly as you type."
+    text: "Type your details. The receipt updates instantly. Select 'Paid' to auto-calculate, or 'Part Paid' to collect a balance."
   },
   {
     title: "One-Tap Sharing",
-    text: "When you're done, tap 'Share to WhatsApp' to send a high-res receipt image directly to your customer. Unlock Pro to remove the watermark!"
+    text: "Tap 'Share to WhatsApp' to send a high-res image. Upgrade to Pro to remove the watermark and add your logo."
   }
 ];
 
 let currentTourStep = 0;
 
-function startTour() {
-  document.getElementById('tourOverlay').classList.add('active');
-  document.getElementById('tourBox').classList.add('active');
-  renderTourStep();
-}
-
-function renderTourStep() {
-  document.getElementById('tourTitle').textContent = tourSteps[currentTourStep].title;
-  document.getElementById('tourText').textContent = tourSteps[currentTourStep].text;
-  
-  const dots = document.querySelectorAll('.tour-dot');
-  dots.forEach((dot, index) => {
-    if (index === currentTourStep) dot.classList.add('active');
-    else dot.classList.remove('active');
-  });
-
-  const nextBtn = document.getElementById('tourNextBtn');
-  if (currentTourStep === tourSteps.length - 1) {
-    nextBtn.textContent = 'Start Using VendSlip';
-  } else {
-    nextBtn.textContent = 'Next';
-  }
-}
-
 document.getElementById('tourNextBtn').addEventListener('click', () => {
   currentTourStep++;
   if (currentTourStep < tourSteps.length) {
-    renderTourStep();
+    document.getElementById('tourTitle').textContent = tourSteps[currentTourStep].title;
+    document.getElementById('tourText').textContent = tourSteps[currentTourStep].text;
+    
+    document.querySelectorAll('.tour-dot').forEach((dot, index) => {
+      if (index === currentTourStep) dot.classList.add('active');
+      else dot.classList.remove('active');
+    });
+
+    if (currentTourStep === tourSteps.length - 1) {
+      document.getElementById('tourNextBtn').textContent = 'Start Using VendSlip';
+    }
   } else {
-    document.getElementById('tourOverlay').classList.remove('active');
-    document.getElementById('tourBox').classList.remove('active');
+    document.getElementById('tourSheet').classList.remove('active');
     localStorage.setItem('vendslip_tour_seen', 'true');
     showToast('You are ready to go!');
   }
