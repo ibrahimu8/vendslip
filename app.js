@@ -173,7 +173,6 @@ function setStatus(btn) {
     bankForm.classList.remove('hidden');
     amountPaidWrapper.classList.add('hidden');
     cashNote.classList.add('hidden');
-    // Auto-fill amount paid if Paid
     document.getElementById('amountPaid').value = document.getElementById('receiptTotal').textContent.replace(/[^0-9.]/g, '') || 0;
   } else if (status === 'Part Payment') {
     bankForm.classList.remove('hidden');
@@ -265,7 +264,7 @@ function updatePreview() {
   let amountPaid = 0;
   if (status === 'Paid') {
     amountPaid = total;
-    document.getElementById('amountPaid').value = total; // Sync input
+    document.getElementById('amountPaid').value = total;
   } else if (status === 'Part Payment') {
     amountPaid = parseFloat(document.getElementById('amountPaid').value) || 0;
   } else if (status === 'Pay on Delivery') {
@@ -372,7 +371,7 @@ function removeLogo() {
   showToast('Logo removed.');
 }
 
-// --- Export Logic (With Font Loading Fix) ---
+// --- Export Logic ---
 async function downloadReceipt() {
   const receipt = document.getElementById('receiptCard');
   const btn = document.getElementById('downloadBtn');
