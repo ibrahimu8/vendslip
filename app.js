@@ -512,3 +512,91 @@ document.getElementById('tourNextBtn').addEventListener('click', () => {
     showToast('You are ready to go!');
   }
 });
+
+// --- WhatsApp Parser Logic ---
+function parseWhatsAppText() {
+  const text = document.getElementById('whatsappText').value;
+  if (!text.trim()) {
+    showToast('Please paste some text first.');
+    return;
+  }
+
+  const lines = text.split('\n');
+  let itemsFound = 0;
+
+  document.getElementById('itemsContainer').innerHTML = '';
+
+  lines.forEach(line => {
+    line = line.trim();
+    if (!line) return;
+
+    let qty = 1;
+    let price = 0;
+    let name = line;
+
+    // Detect Quantity
+    const qtyMatch = line.match(/^(\d+)\s*(?:x|pcs|piece|pieces)\s*/i);
+    if (qtyMatch) {
+      qty = parseInt(qtyMatch[1]);
+      name = line.replace(qtyMatch[0], '').trim();
+    }
+
+    // Detect Price
+    const priceMatch = name.match(/[-=₦N]?\s*(\d+(?:,\d{3})*(?:\.\d+)?)\s*(k)?$/i);
+    
+    if (priceMatch) {
+      let rawPrice = priceMatch[1].replace(/,/g, '');
+      price = parseFloat(rawPrice);
+      if (priceMatch[2]) price *= 1000; 
+      
+      name = name.replace(priceMatch[0], '').trim();
+      name = name.replace(/[-=]+$/, '').trim();
+    }
+
+    if (price > 0) {
+      createParsedItem(name, qty, price);
+      itemsFound++;
+    }
+  });
+
+  if (itemsFound === 0) {
+    showToast('Could not detect items. Try formatting like: "2x Shirt - 5000"');
+    addItem(); 
+  } else {
+    showToast(`Extracted ${itemsFound} items!`);
+    document.getElementById('pasteModal').classList.remove('active');
+    document.getElementById('whatsappText').value = '';
+  }
+
+  updatePreview();
+}
+
+function createParsedItem(name, qty, price) {
+  const container = document.getElementById('itemsContainer');
+  const div = document.createElement('div');
+  div.className = 'item-row';
+  div.innerHTML = `
+    <button class="remove-item-btn" onclick="this.parentElement.remove(); updatePreview();">×</button>
+    <div class="input-group" style="margin-bottom: 8px;">
+      <label>Item Description</label>
+      <input type="text" class="item-name" value="${name}" oninput="updatePreview()">
+    </div>
+    <div class="input-row">
+      <div class="input-group" style="margin-bottom: 0;">
+        <label>Qty</label>
+        <input type="number" class="item-qty" value="${qty}" min="1" oninput="updatePreview()">
+      </div>
+      <div class="input-group" style="margin-bottom: 0;">
+        <label>Unit Price</label>
+        <input type="number" class="item-price" value="${price}" oninput="updatePreview()">
+      </div>
+    </div>
+    <div class="quick-price-btns">
+      <button class="quick-price-btn" onclick="setPrice(this, 1000)">₦1k</button>
+      <button class="quick-price-btn" onclick="setPrice(this, 5000)">₦5k</button>
+      <button class="quick-price-btn" onclick="setPrice(this, 10000)">₦10k</button>
+      <button class="quick-price-btn" onclick="setPrice(this, 25000)">₦25k</button>
+    </div>
+  `;
+  container.appendChild(div);
+}
