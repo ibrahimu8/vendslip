@@ -9,7 +9,6 @@
 </head>
 <body>
 
-  <!-- Header -->
   <header>
     <div class="brand">
       <img src="Vendslip.jpg" alt="VendSlip" class="logo-img">
@@ -27,20 +26,17 @@
 
   <main class="app-container">
     
-    <!-- Intro Subtitle -->
     <div style="text-align: center; margin-bottom: 16px; padding: 0 16px;">
       <p style="font-size: 0.85rem; color: var(--text-muted); font-weight: 500; line-height: 1.4;">
         Instant verified receipts for social & WhatsApp vendors. No sign-up required.
       </p>
     </div>
 
-    <!-- Mobile Tabs -->
     <div class="mobile-tabs">
       <button class="active" id="tabEdit" onclick="switchTab('edit')">Edit Slip</button>
       <button id="tabPreview" onclick="switchTab('preview')">Live Preview (₦<span id="tabTotal">0</span>)</button>
     </div>
 
-    <!-- Left Column: Form -->
     <div class="edit-col" id="editCol">
       <div class="card">
         <div class="section-title">Business Details</div>
@@ -48,7 +44,6 @@
           <label>Business Name</label>
           <input type="text" id="bizName" placeholder="e.g. Ada's Thrifts" value="Ada's Thrifts" oninput="updatePreview()">
           
-          <!-- Logo Upload UI -->
           <div style="display: flex; align-items: center; gap: 12px; margin-top: 8px;">
             <button id="uploadLogoBtn" class="btn-outline" style="font-size: 0.8rem; padding: 6px 12px;">Upload Store Logo (Pro)</button>
             <button id="removeLogoBtn" class="hidden" style="background: none; border: none; color: #E11D48; font-size: 0.8rem; font-weight: 600; cursor: pointer; text-decoration: underline;">Remove Logo</button>
@@ -74,7 +69,6 @@
       <div class="card">
         <div class="section-title">Items</div>
         <div id="itemsContainer">
-          <!-- Item Row Template -->
           <div class="item-row" style="margin-bottom: 12px;">
             <div class="input-group" style="margin-bottom: 8px;">
               <label>Item Description</label>
@@ -114,7 +108,6 @@
           </div>
         </div>
 
-        <!-- Bank Details (Hidden by default) -->
         <div id="bankDetailsForm" class="hidden" style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border);">
           <div class="section-title">Bank Transfer Details</div>
           <div class="input-group">
@@ -135,7 +128,6 @@
       </div>
     </div>
 
-    <!-- Right Column: Live Preview -->
     <div class="preview-col" id="previewCol" style="display: none;">
       <div class="receipt-container">
         <div class="receipt-card" id="receiptCard">
@@ -165,9 +157,7 @@
                   <th>Price</th>
                 </tr>
               </thead>
-              <tbody id="receiptItems">
-                <!-- Injected via JS -->
-              </tbody>
+              <tbody id="receiptItems"></tbody>
             </table>
 
             <div class="receipt-totals">
@@ -192,7 +182,6 @@
         </div>
       </div>
 
-      <!-- Themes -->
       <div class="card" style="padding: 16px; margin-bottom: 16px;">
         <label style="margin-bottom: 8px;">Receipt Theme</label>
         <div class="currency-wrap" id="themeWrap">
@@ -212,7 +201,6 @@
 
   </main>
 
-  <!-- Pro Modal -->
   <div class="modal-overlay" id="proModal">
     <div class="modal-content">
       <h2 style="font-size: 1.5rem; margin-bottom: 8px; font-weight: 700;">Upgrade to VendSlip Pro</h2>
@@ -229,26 +217,24 @@
     </div>
   </div>
 
-  <!-- Toast -->
+  <div class="tour-overlay" id="tourOverlay"></div>
+  
+  <div class="tour-box" id="tourBox">
+    <h3 id="tourTitle">Welcome to VendSlip</h3>
+    <p id="tourText">The fastest way to create professional receipts for WhatsApp and IG vendors. No sign-up required.</p>
+    <div class="tour-nav">
+      <div class="tour-dots">
+        <div class="tour-dot active"></div>
+        <div class="tour-dot"></div>
+        <div class="tour-dot"></div>
+      </div>
+      <button class="tour-btn" id="tourNextBtn">Next</button>
+    </div>
+  </div>
+
   <div id="toast" class="toast">Saved!</div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
-
-<!-- Onboarding Tour -->
-<div class="tour-overlay" id="tourOverlay"></div>
-
-<div class="tour-box" id="tourBox">
-  <h3 id="tourTitle">Welcome to VendSlip</h3>
-  <p id="tourText">The fastest way to generate professional receipts for your WhatsApp and Instagram customers. No sign-up needed.</p>
-  <div class="tour-nav">
-    <div class="tour-dots">
-      <div class="tour-dot active"></div>
-      <div class="tour-dot"></div>
-      <div class="tour-dot"></div>
-    </div>
-    <button class="tour-btn" id="tourNextBtn">Next</button>
-  </div>
-</div>

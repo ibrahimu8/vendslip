@@ -18,18 +18,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
   loadSavedData();
 
-  // --- NEW: Paystack Redirect Listener ---
+  // Paystack Redirect Listener
   const urlParams = new URLSearchParams(window.location.search);
   if (urlParams.has('pro_success') || urlParams.has('reference') || urlParams.has('trxref')) {
     if (!isPro) {
       activatePro();
       showToast('Upgrade successful! VendSlip Pro is now active.');
     }
-    // Clean up the URL so it looks clean for the vendor
     window.history.replaceState({}, document.title, window.location.pathname);
   }
 
-  // Setup Logo Upload Listeners
+  // Logo Upload Listeners
   document.getElementById('uploadLogoBtn').addEventListener('click', () => {
     if (!isPro) {
       document.getElementById('proModal').classList.add('active');
@@ -43,6 +42,14 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('removeLogoBtn').addEventListener('click', removeLogo);
 
   updatePreview();
+
+  // Tour Logic
+  const hasSeenTour = localStorage.getItem('vendslip_tour_seen');
+  if (!hasSeenTour) {
+    setTimeout(() => {
+      startTour();
+    }, 1500);
+  }
 });
 
 function activatePro() {
@@ -376,21 +383,7 @@ function showToast(msg) {
   setTimeout(() => t.classList.remove('show'), 3000);
 }
 
-// --- Animations & Onboarding Tour Logic ---
-document.addEventListener('DOMContentLoaded', () => {
-  // Re-trigger CSS animations on load
-  document.body.style.opacity = '1';
-
-  // Check if user has seen the tour
-  const hasSeenTour = localStorage.getItem('vendslip_tour_seen');
-  
-  if (!hasSeenTour) {
-    setTimeout(() => {
-      startTour();
-    }, 1500); // Wait 1.5 seconds after page load to start the tour
-  }
-});
-
+// --- Tour Logic ---
 const tourSteps = [
   {
     title: "Welcome to VendSlip",
@@ -437,11 +430,9 @@ document.getElementById('tourNextBtn').addEventListener('click', () => {
   if (currentTourStep < tourSteps.length) {
     renderTourStep();
   } else {
-    // End the tour
     document.getElementById('tourOverlay').classList.remove('active');
     document.getElementById('tourBox').classList.remove('active');
     localStorage.setItem('vendslip_tour_seen', 'true');
-    // Show a welcome toast
     showToast('You are ready to go!');
   }
 });
