@@ -5,6 +5,7 @@ let isPro = false;
 let currentReceiptTheme = 'emerald';
 let savedLogoBase64 = null;
 let currentRef = '';
+let qrcodeInstance = null;
 
 // --- Init & Local Storage ---
 document.addEventListener('DOMContentLoaded', () => {
@@ -19,8 +20,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   loadSavedData();
   generateRef();
+  initQRCode();
 
   const urlParams = new URLSearchParams(window.location.search);
+  // Test mode logic for Paystack redirect
   if (urlParams.has('pro_success') || urlParams.has('reference') || urlParams.has('trxref')) {
     if (!isPro) {
       activatePro();
@@ -49,9 +52,49 @@ document.addEventListener('DOMContentLoaded', () => {
   if (!hasSeenTour) {
     setTimeout(() => {
       document.getElementById('tourSheet').classList.add('active');
-    }, 1000);
+    }, 1500);
   }
 });
+
+// --- 3D Tilt Effect ---
+function tiltCard(e) {
+  if(window.innerWidth < 768) return; // Disable on mobile for performance
+  const card = document.getElementById('receiptCard');
+  const rect = card.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+  
+  const centerX = rect.width / 2;
+  const centerY = rect.height / 2;
+  
+  const rotateX = ((y - centerY) / centerY) * -10;
+  const rotateY = ((x - centerX) / centerX) * 10;
+  
+  card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02, 1.02, 1.02)`;
+}
+
+function resetTilt() {
+  const card = document.getElementById('receiptCard');
+  card.style.transform = `perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)`;
+}
+
+// --- QR Code Protocol ---
+function initQRCode() {
+  const qrContainer = document.getElementById('qrcode');
+  if (qrcodeInstance) qrcodeInstance.clear();
+  
+  // Create a verification URL based on the current reference
+  const verifyUrl = `https://vendslip.com.ng/verify/${currentRef}`;
+  
+  qrcodeInstance = new QRCode(qrContainer, {
+    text: verifyUrl,
+    width: 60,
+    height: 60,
+    colorDark : "#0F172A",
+    colorLight : "#ffffff",
+    correctLevel : QRCode.CorrectLevel.L
+  });
+}
 
 function generateRef() {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -68,11 +111,12 @@ function activatePro() {
   document.getElementById('receiptWatermark').classList.add('hidden');
   const badge = document.getElementById('headerBadge');
   badge.textContent = 'PRO';
-  badge.style.background = 'linear-gradient(135deg, #10B981 0%, #4F46E5 100%)';
-  badge.style.color = '#ffffff';
+  badge.classList.add('pro-active');
   saveData();
+  updatePreview();
 }
 
+// --- Persistence ---
 function loadSavedData() {
   const saved = JSON.parse(localStorage.getItem('vendslip_data'));
   if (saved) {
@@ -89,9 +133,7 @@ function loadSavedData() {
       });
     }
 
-    if (saved.isPro) {
-      activatePro();
-    }
+    if (saved.isPro) activatePro();
 
     if (saved.logo) {
       savedLogoBase64 = saved.logo;
@@ -187,17 +229,25 @@ function setStatus(btn) {
   updatePreview();
 }
 
+function setPrice(btn, amount) {
+  const itemRow = btn.closest('.item-row');
+  const priceInput = itemRow.querySelector('.item-price');
+  priceInput.value = amount;
+  updatePreview();
+}
+
 function addItem() {
   const container = document.getElementById('itemsContainer');
   const div = document.createElement('div');
   div.className = 'item-row';
-  div.style.marginBottom = '12px';
   div.innerHTML = `
-    <div class="input-group" style="margin-bottom: 8px;">
+    <div class="item-header">
       <label>Item Description</label>
-      <input type="text" class="item-name" placeholder="Item" oninput="updatePreview()">
+      <button class="delete-item-btn" onclick="this.closest('.item-row').remove(); updatePreview();" style="background: none; border: none; color: #E11D48; font-size: 0.8rem; font-weight: 700; cursor: pointer;">Remove</button>
     </div>
-    <div class="input-row">
+    <input type="text" class="item-name" placeholder="e.g. Vintage Denim Jacket" oninput="updatePreview()">
+    
+    <div class="input-row mt-8">
       <div class="input-group" style="margin-bottom: 0;">
         <label>Qty</label>
         <input type="number" class="item-qty" value="1" min="1" oninput="updatePreview()">
@@ -207,8 +257,18 @@ function addItem() {
         <input type="number" class="item-price" placeholder="0.00" oninput="updatePreview()">
       </div>
     </div>
+    
+    <div class="quick-amounts">
+      <button type="button" class="btn-pill" onclick="setPrice(this, 1000)">₦1k</button>
+      <button type="button" class="btn-pill" onclick="setPrice(this, 5000)">₦5k</button>
+      <button type="button" class="btn-pill" onclick="setPrice(this, 10000)">₦10k</button>
+      <button type="button" class="btn-pill" onclick="setPrice(this, 25000)">₦25k</button>
+    </div>
   `;
   container.appendChild(div);
+  
+  // Show delete button on the first row if there are now multiple
+  document.querySelectorAll('.delete-item-btn').forEach(btn => btn.classList.remove('hidden'));
   updatePreview();
 }
 
@@ -284,12 +344,12 @@ function updatePreview() {
   
   const balRow = document.getElementById('receiptBalanceRow');
   if (status === 'Paid') {
-    balRow.style.display = 'none';
+    balRow.classList.add('hidden');
   } else if (status === 'Part Payment') {
-    balRow.style.display = 'flex';
+    balRow.classList.remove('hidden');
     document.getElementById('receiptBalance').textContent = formatMoney(balance);
   } else if (status === 'Pay on Delivery') {
-    balRow.style.display = 'flex';
+    balRow.classList.remove('hidden');
     document.getElementById('receiptBalance').textContent = formatMoney(total); 
   }
 
@@ -312,11 +372,10 @@ function setReceiptTheme(theme, btn) {
   banner.className = 'receipt-header-banner ' + (theme === 'emerald' ? '' : theme);
   currentReceiptTheme = theme;
 
-  document.querySelectorAll('#themeWrap .currency-btn').forEach(b => b.style.opacity = '0.4');
-  if(btn) btn.style.opacity = '1';
+  document.querySelectorAll('#themeWrap .currency-btn').forEach(b => b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
 }
 
-// --- Pro Features ---
 function checkProTheme(theme, btn) {
   if (isPro) {
     setReceiptTheme(theme, btn);
@@ -379,10 +438,8 @@ async function downloadReceipt() {
   btn.textContent = 'Generating...';
   
   try {
-    if (document.fonts && document.fonts.ready) {
-      await document.fonts.ready;
-    }
-    const canvas = await html2canvas(receipt, { scale: 3, backgroundColor: '#ffffff', useCORS: true });
+    if (document.fonts && document.fonts.ready) await document.fonts.ready;
+    const canvas = await html2canvas(receipt, { scale: 2, backgroundColor: '#ffffff', useCORS: true });
     const link = document.createElement('a');
     link.download = `VendSlip-${currentRef}.png`;
     link.href = canvas.toDataURL('image/png');
@@ -391,17 +448,15 @@ async function downloadReceipt() {
   } catch (err) {
     showToast('Error generating image.');
   } finally {
-    btn.textContent = 'Download HD Receipt';
+    btn.textContent = 'Download HD';
   }
 }
 
 async function shareWhatsApp() {
   const receipt = document.getElementById('receiptCard');
   try {
-    if (document.fonts && document.fonts.ready) {
-      await document.fonts.ready;
-    }
-    const canvas = await html2canvas(receipt, { scale: 3, backgroundColor: '#ffffff', useCORS: true });
+    if (document.fonts && document.fonts.ready) await document.fonts.ready;
+    const canvas = await html2canvas(receipt, { scale: 2, backgroundColor: '#ffffff', useCORS: true });
     canvas.toBlob(async (blob) => {
       const file = new File([blob], `VendSlip-${currentRef}.png`, { type: 'image/png' });
       
@@ -436,31 +491,18 @@ function showToast(msg) {
 function setupScrollAnimations() {
   const observer = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        entry.target.classList.add('active');
-      }
+      if (entry.isIntersecting) entry.target.classList.add('active');
     });
   }, { threshold: 0.1 });
 
-  document.querySelectorAll('.reveal-on-scroll').forEach((el) => {
-    observer.observe(el);
-  });
+  document.querySelectorAll('.reveal-on-scroll').forEach((el) => observer.observe(el));
 }
 
 // --- Tour Logic ---
 const tourSteps = [
-  {
-    title: "Welcome to VendSlip",
-    text: "The fastest way to create professional receipts for WhatsApp and IG vendors. No sign-up required."
-  },
-  {
-    title: "Real-Time Generation",
-    text: "Type your details. The receipt updates instantly. Select 'Paid' to auto-calculate, or 'Part Paid' to collect a balance."
-  },
-  {
-    title: "One-Tap Sharing",
-    text: "Tap 'Share to WhatsApp' to send a high-res image. Upgrade to Pro to remove the watermark and add your logo."
-  }
+  { title: "Welcome to VendSlip", text: "The fastest way to create professional receipts for WhatsApp and IG vendors. No sign-up required." },
+  { title: "Real-Time Generation", text: "Type your details. The receipt updates instantly. Select 'Paid' to auto-calculate, or 'Part Paid' to collect a balance." },
+  { title: "One-Tap Sharing", text: "Tap 'Share to WhatsApp' to send a high-res image. Upgrade to Pro to remove the watermark and add your logo." }
 ];
 
 let currentTourStep = 0;

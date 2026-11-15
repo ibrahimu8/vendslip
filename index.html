@@ -2,16 +2,18 @@
 <html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>VendSlip | Instant Receipts</title>
-  <link rel="icon" type="image/jpeg" href="Vendslip.jpg">
   <link rel="stylesheet" href="style.css">
+  <!-- Libraries -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 <body>
 
   <header>
     <div class="brand">
-      <img src="Vendslip.jpg" alt="VendSlip" class="logo-img">
+      <div class="logo-3d">V</div>
       VendSlip
       <span class="pro-badge" id="headerBadge" style="background: var(--border); color: var(--text-muted);">BETA</span>
     </div>
@@ -26,10 +28,8 @@
 
   <main class="app-container">
     
-    <div style="text-align: center; margin-bottom: 16px; padding: 0 16px;">
-      <p style="font-size: 0.85rem; color: var(--text-muted); font-weight: 500; line-height: 1.4;">
-        Instant verified receipts for social & WhatsApp vendors. No sign-up required.
-      </p>
+    <div class="header-tagline reveal-on-scroll">
+      <p>Instant verified receipts for social & WhatsApp vendors. No sign-up required.</p>
     </div>
 
     <div class="mobile-tabs">
@@ -38,20 +38,21 @@
     </div>
 
     <div class="edit-col" id="editCol">
+      <!-- BUSINESS DETAILS -->
       <div class="card reveal-on-scroll">
         <div class="section-title">Business Details</div>
         <div class="input-group">
           <label>Business Name</label>
-          <input type="text" id="bizName" placeholder="e.g. Ada's Thrifts" value="Ada's Thrifts" oninput="updatePreview()">
+          <input type="text" id="bizName" placeholder="e.g. Ada's Thrifts" value="Mary Cosmetics" oninput="updatePreview()">
           
-          <div style="display: flex; align-items: center; gap: 12px; margin-top: 8px;">
-            <button id="uploadLogoBtn" class="btn-outline" style="font-size: 0.8rem; padding: 6px 12px;">Upload Store Logo (Pro)</button>
-            <button id="removeLogoBtn" class="hidden" style="background: none; border: none; color: #E11D48; font-size: 0.8rem; font-weight: 600; cursor: pointer; text-decoration: underline;">Remove Logo</button>
+          <div class="logo-action-row">
+            <button id="uploadLogoBtn" class="btn-outline btn-small">Upload Store Logo (Pro)</button>
+            <button id="removeLogoBtn" class="hidden btn-text-danger">Remove Logo</button>
             <input type="file" id="logoInput" accept="image/*" class="hidden">
           </div>
         </div>
         
-        <div class="section-title" style="margin-top: 24px;">Currency</div>
+        <div class="section-title mt-24">Currency</div>
         <div class="currency-wrap" id="currencyWrap">
           <button class="currency-btn active" data-sym="₦" onclick="setCurrency(this)">₦ NGN</button>
           <button class="currency-btn" data-sym="$" onclick="setCurrency(this)">$ USD</button>
@@ -59,36 +60,48 @@
           <button class="currency-btn" data-sym="₵" onclick="setCurrency(this)">₵ GHS</button>
         </div>
 
-        <div class="section-title" style="margin-top: 24px;">Buyer Info</div>
+        <div class="section-title mt-24">Buyer Info</div>
         <div class="input-group">
           <label>Buyer Name</label>
           <input type="text" id="buyerName" placeholder="Customer name" value="John Doe" oninput="updatePreview()">
         </div>
       </div>
 
+      <!-- ITEMS -->
       <div class="card reveal-on-scroll">
         <div class="section-title">Items</div>
         <div id="itemsContainer">
-          <div class="item-row" style="margin-bottom: 12px;">
-            <div class="input-group" style="margin-bottom: 8px;">
+          <!-- Item Row Template -->
+          <div class="item-row">
+            <div class="item-header">
               <label>Item Description</label>
-              <input type="text" class="item-name" placeholder="e.g. Vintage Denim Jacket" value="Vintage Denim Jacket" oninput="updatePreview()">
+              <button class="delete-item-btn hidden" onclick="this.closest('.item-row').remove(); updatePreview();" style="background: none; border: none; color: #E11D48; font-size: 0.8rem; font-weight: 700; cursor: pointer;">Remove</button>
             </div>
-            <div class="input-row">
-              <div class="input-group" style="margin-bottom: 0;">
+            <input type="text" class="item-name" placeholder="e.g. Vintage Denim Jacket" value="Black wigs" oninput="updatePreview()">
+            
+            <div class="input-row mt-8">
+              <div class="input-group">
                 <label>Qty</label>
-                <input type="number" class="item-qty" value="1" min="1" oninput="updatePreview()">
+                <input type="number" class="item-qty" value="2" min="1" oninput="updatePreview()">
               </div>
-              <div class="input-group" style="margin-bottom: 0;">
+              <div class="input-group">
                 <label>Unit Price</label>
-                <input type="number" class="item-price" value="15000" placeholder="0.00" oninput="updatePreview()">
+                <input type="number" class="item-price" value="25000" placeholder="0.00" oninput="updatePreview()">
               </div>
+            </div>
+            
+            <div class="quick-amounts">
+              <button type="button" class="btn-pill" onclick="setPrice(this, 1000)">₦1k</button>
+              <button type="button" class="btn-pill" onclick="setPrice(this, 5000)">₦5k</button>
+              <button type="button" class="btn-pill" onclick="setPrice(this, 10000)">₦10k</button>
+              <button type="button" class="btn-pill" onclick="setPrice(this, 25000)">₦25k</button>
             </div>
           </div>
         </div>
-        <button class="btn-outline" style="width: 100%; margin-top: 8px; border-style: dashed;" onclick="addItem()">+ Add Another Item</button>
+        <button class="btn-outline btn-dashed mt-16" onclick="addItem()">+ Add Another Item</button>
       </div>
 
+      <!-- PAYMENT STATUS -->
       <div class="card reveal-on-scroll">
         <div class="section-title">Payment Status</div>
         <div class="status-grid" id="statusGrid">
@@ -97,18 +110,18 @@
           <button class="status-btn" data-status="Pay on Delivery" onclick="setStatus(this)">PAY ON DELIVERY</button>
         </div>
 
-        <div class="input-row" style="margin-top: 16px;">
+        <div class="input-row mt-16">
           <div class="input-group">
             <label>Delivery Fee</label>
             <input type="number" id="deliveryFee" value="2000" placeholder="0.00" oninput="updatePreview()">
           </div>
           <div class="input-group hidden" id="amountPaidWrapper">
-            <label>Amount Paid So Far</label>
+            <label>Amount Paid</label>
             <input type="number" id="amountPaid" value="0" placeholder="0.00" oninput="updatePreview()">
           </div>
         </div>
 
-        <div id="bankDetailsForm" class="hidden" style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border);">
+        <div id="bankDetailsForm" class="hidden mt-16 pt-16 border-top">
           <div class="section-title">Pay To (Seller):</div>
           <div class="input-group">
             <label>Bank Name</label>
@@ -117,7 +130,7 @@
           <div class="input-row">
             <div class="input-group">
               <label>Account Number</label>
-              <input type="text" id="accNumber" placeholder="0123456789" value="0123456789" oninput="updatePreview()">
+              <input type="text" id="accNumber" placeholder="0123456789" value="2280730376" oninput="updatePreview()">
             </div>
             <div class="input-group">
               <label>Account Name</label>
@@ -128,25 +141,27 @@
       </div>
     </div>
 
+    <!-- PREVIEW COLUMN -->
     <div class="preview-col" id="previewCol" style="display: none;">
       <div class="receipt-container">
-        <div class="receipt-card" id="receiptCard">
+        <!-- 3D Tilt Card -->
+        <div class="receipt-card" id="receiptCard" onmousemove="tiltCard(event)" onmouseleave="resetTilt()">
           
           <div class="receipt-header-banner" id="receiptBanner">
-            <div class="biz-logo" id="receiptLogo">A</div>
+            <div class="biz-logo" id="receiptLogo">M</div>
             <div class="stamp" id="receiptStamp">PAID</div>
           </div>
 
           <div class="receipt-body">
             <div class="receipt-meta">
               <div>
-                <strong style="color: #0F172A; font-size: 1rem;" id="receiptBizName">Ada's Thrifts</strong><br>
-                <span id="receiptDate">Oct 24, 2023</span><br>
-                <span style="font-size: 0.7rem; color: #94A3B8;">Ref: <span id="receiptRef">VS-XXXXX</span></span>
+                <strong class="receipt-biz-name" id="receiptBizName">Mary Cosmetics</strong><br>
+                <span id="receiptDate">Nov 15, 2026</span><br>
+                <span class="receipt-ref-text">Ref: <span id="receiptRef">VS-XXXXX</span></span>
               </div>
-              <div style="text-align: right;">
+              <div class="text-right">
                 <span>Billed to:</span><br>
-                <strong style="color: #0F172A;" id="receiptBuyer">John Doe</strong>
+                <strong class="receipt-buyer-name" id="receiptBuyer">John Doe</strong>
               </div>
             </div>
 
@@ -162,63 +177,69 @@
             </table>
 
             <div class="receipt-totals">
-              <div class="t-row"><span>Subtotal</span> <span id="receiptSubtotal">₦15,000</span></div>
-              <div class="t-row"><span>Delivery</span> <span id="receiptDelivery">₦2,000</span></div>
-              <div class="t-row grand"><span>Total</span> <span id="receiptTotal">₦17,000</span></div>
-              <div class="t-row" id="receiptBalanceRow" style="color: #E11D48; margin-top: 8px; font-weight: bold;">
-                <span>Balance Due</span> <span id="receiptBalance">₦17,000</span>
+              <div class="t-row"><span>Subtotal</span> <span id="receiptSubtotal">₦0</span></div>
+              <div class="t-row"><span>Delivery</span> <span id="receiptDelivery">₦0</span></div>
+              <div class="t-row grand"><span>Total</span> <span id="receiptTotal">₦0</span></div>
+              <div class="t-row balance-row hidden" id="receiptBalanceRow">
+                <span>Balance Due</span> <span id="receiptBalance">₦0</span>
               </div>
             </div>
 
-            <div id="cashNote" class="hidden" style="margin-top: 16px; font-size: 0.75rem; color: #64748B; font-style: italic; text-align: center;">
+            <div id="cashNote" class="hidden cash-note">
               Please have exact cash ready for the dispatch rider.
             </div>
 
             <div class="bank-details hidden" id="receiptBankDetails">
-              <p style="font-weight: 600; color: #0F172A; margin-bottom: 8px;">Pay To (Seller):</p>
-              <p>Bank: <strong id="rBankName">GTBank</strong></p>
-              <p>Acct No: <strong id="rAccNumber">0123456789</strong></p>
-              <p>Acct Name: <strong id="rAccName">Ada Okafor</strong></p>
+              <p class="bank-title">Pay To (Seller):</p>
+              <p>Bank: <strong id="rBankName">-</strong></p>
+              <p>Acct No: <strong id="rAccNumber">-</strong></p>
+              <p>Acct Name: <strong id="rAccName">-</strong></p>
             </div>
           </div>
 
           <div class="receipt-zigzag"></div>
-          <div class="receipt-watermark" id="receiptWatermark">Verified via VendSlip.com</div>
+          
+          <div class="receipt-watermark" id="receiptWatermark">
+            <div id="qrcode"></div>
+            <span class="watermark-text">Verified via VendSlip.com</span>
+          </div>
         </div>
       </div>
 
-      <div class="card reveal-on-scroll" style="padding: 16px; margin-bottom: 16px;">
-        <label style="margin-bottom: 8px;">Receipt Theme</label>
+      <!-- THEMES -->
+      <div class="card reveal-on-scroll theme-card">
+        <label class="theme-label">Receipt Theme</label>
         <div class="currency-wrap" id="themeWrap">
-          <button class="currency-btn active" style="background: #10B981; border-color: #10B981; color: #fff;" onclick="setReceiptTheme('emerald', this)">Emerald</button>
-          <button class="currency-btn" style="background: #4F46E5; border-color: #4F46E5; color: #fff;" onclick="setReceiptTheme('indigo', this)">Indigo</button>
-          <button class="currency-btn" style="background: #18181B; border-color: #18181B; color: #fff;" onclick="setReceiptTheme('onyx', this)">Onyx</button>
-          <button class="currency-btn" style="background: #E11D48; border-color: #E11D48; color: #fff;" onclick="setReceiptTheme('rose', this)">Rose</button>
-          <button class="currency-btn" style="background: linear-gradient(135deg, #F59E0B, #B45309); border: none; color: #fff;" onclick="checkProTheme('gold', this)">Gold</button>
+          <button class="currency-btn theme-btn emerald active" onclick="setReceiptTheme('emerald', this)">Emerald</button>
+          <button class="currency-btn theme-btn indigo" onclick="setReceiptTheme('indigo', this)">Indigo</button>
+          <button class="currency-btn theme-btn onyx" onclick="setReceiptTheme('onyx', this)">Onyx</button>
+          <button class="currency-btn theme-btn rose" onclick="setReceiptTheme('rose', this)">Rose</button>
+          <button class="currency-btn theme-btn gold" onclick="checkProTheme('gold', this)">Gold 🔒</button>
         </div>
       </div>
 
-      <div class="input-row reveal-on-scroll">
-        <button class="btn-primary" onclick="downloadReceipt()" id="downloadBtn">Download HD Receipt</button>
-        <button class="btn-primary" style="background: #25D366;" onclick="shareWhatsApp()">Share to WhatsApp</button>
+      <div class="input-row reveal-on-scroll action-buttons">
+        <button class="btn-primary" onclick="downloadReceipt()" id="downloadBtn">Download HD</button>
+        <button class="btn-primary btn-whatsapp" onclick="shareWhatsApp()">WhatsApp</button>
       </div>
     </div>
 
   </main>
 
+  <!-- MODALS & OVERLAYS -->
   <div class="modal-overlay" id="proModal">
-    <div class="modal-content">
-      <h2 style="font-size: 1.5rem; margin-bottom: 8px; font-weight: 700;">Upgrade to VendSlip Pro</h2>
-      <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 24px;">Stand out with premium features designed for serious vendors.</p>
+    <div class="modal-content reveal-on-scroll">
+      <h2 class="modal-title">Upgrade to Pro</h2>
+      <p class="modal-desc">Stand out with premium features for serious vendors.</p>
       
-      <ul style="list-style: none; margin-bottom: 24px; font-size: 0.95rem; line-height: 2;">
-        <li style="display: flex; align-items: center; gap: 8px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg> Remove VendSlip Watermark</li>
-        <li style="display: flex; align-items: center; gap: 8px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg> Upload Your Business Logo</li>
-        <li style="display: flex; align-items: center; gap: 8px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg> Luxury Gold Theme</li>
+      <ul class="pro-features">
+        <li>✓ Remove VendSlip Watermark</li>
+        <li>✓ Upload Your Business Logo</li>
+        <li>✓ Luxury Gold Theme</li>
       </ul>
 
-      <a id="paystackLink" href="https://paystack.shop/pay/30uz0wj30l" class="btn-primary" style="display: block; text-align: center; text-decoration: none; margin-bottom: 12px;">Upgrade Now — ₦2,000</a>
-      <button class="btn-outline" style="width: 100%;" onclick="closeProModal()">Maybe Later</button>
+      <a href="https://paystack.shop/pay/30uz0wj30l" class="btn-primary" style="display: block; text-align: center; text-decoration: none; margin-bottom: 12px;">Upgrade Now — ₦2,000</a>
+      <button class="btn-outline btn-block" onclick="closeProModal()">Maybe Later</button>
     </div>
   </div>
 
@@ -239,7 +260,6 @@
 
   <div id="toast" class="toast">Saved!</div>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
