@@ -1,481 +1,197 @@
-// --- State ---
-let currency = '₦';
-let status = 'Paid';
-let isPro = false;
-let currentReceiptTheme = 'emerald';
-let savedLogoBase64 = null;
-let currentRef = '';
+// --- STATE ---
+let currentCurrency = '₦';
+let currentPaymentStatus = 'PART_PAID';
 
-// --- Init & Local Storage ---
-document.addEventListener('DOMContentLoaded', () => {
-  document.getElementById('receiptDate').textContent = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
-  
-  if(window.innerWidth < 768) {
-    document.getElementById('previewCol').style.display = 'none';
-    document.getElementById('editCol').style.display = 'block';
-  } else {
-    document.getElementById('previewCol').style.display = 'block';
-  }
+// --- INITIALIZATION ---
+window.addEventListener('DOMContentLoaded', () => {
+    // Set Date
+    const today = new Date();
+    document.getElementById('receiptDate').innerText = today.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    
+    // Set Ref ID
+    document.getElementById('receiptRef').innerText = 'VS-' + Math.random().toString(36).substring(2, 7).toUpperCase();
+    
+    // Initial Calculation
+    updateReceipt();
 
-  loadSavedData();
-  generateRef();
-
-  const urlParams = new URLSearchParams(window.location.search);
-  if (urlParams.has('pro_success') || urlParams.has('reference') || urlParams.has('trxref')) {
-    if (!isPro) {
-      activatePro();
-      showToast('Upgrade successful! VendSlip Pro is now active.');
-    }
-    window.history.replaceState({}, document.title, window.location.pathname);
-  }
-
-  document.getElementById('uploadLogoBtn').addEventListener('click', () => {
-    if (!isPro) {
-      document.getElementById('proModal').classList.add('active');
-      showToast('Upgrade to Pro to upload your store logo.');
-    } else {
-      document.getElementById('logoInput').click();
-    }
-  });
-
-  document.getElementById('logoInput').addEventListener('change', handleLogoUpload);
-  document.getElementById('removeLogoBtn').addEventListener('click', removeLogo);
-
-  updatePreview();
-  setupScrollAnimations();
-
-  // Onboarding Tour (Triggers 1.5s after load, before user can click into a field and open keyboard)
-  const hasSeenTour = localStorage.getItem('vendslip_tour_seen');
-  if (!hasSeenTour) {
+    // Show Bottom Sheet Tour after 1 second
     setTimeout(() => {
-      document.getElementById('tourSheet').classList.add('active');
-    }, 1500);
-  }
+        document.getElementById('tourSheet').classList.add('show');
+    }, 1000);
 });
 
-function generateRef() {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  let ref = 'VS-';
-  for (let i = 0; i < 5; i++) {
-    ref += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  currentRef = ref;
-  document.getElementById('receiptRef').textContent = ref;
+// --- UI INTERACTIONS ---
+function closeTour() {
+    document.getElementById('tourSheet').classList.remove('show');
 }
 
-function activatePro() {
-  isPro = true;
-  document.getElementById('receiptWatermark').classList.add('hidden');
-  const badge = document.getElementById('headerBadge');
-  badge.textContent = 'PRO';
-  badge.style.background = 'linear-gradient(135deg, #10B981 0%, #4F46E5 100%)';
-  badge.style.color = '#ffffff';
-  saveData();
-}
-
-function loadSavedData() {
-  const saved = JSON.parse(localStorage.getItem('vendslip_data'));
-  if (saved) {
-    if (saved.bizName) document.getElementById('bizName').value = saved.bizName;
-    if (saved.bankName) document.getElementById('bankName').value = saved.bankName;
-    if (saved.accNumber) document.getElementById('accNumber').value = saved.accNumber;
-    if (saved.accName) document.getElementById('accName').value = saved.accName;
-    
-    if (saved.currency) {
-      currency = saved.currency;
-      document.querySelectorAll('#currencyWrap .currency-btn').forEach(b => {
-        if (b.dataset.sym === currency) b.classList.add('active');
-        else b.classList.remove('active');
-      });
-    }
-
-    if (saved.isPro) {
-      activatePro();
-    }
-
-    if (saved.logo) {
-      savedLogoBase64 = saved.logo;
-      renderLogoImage();
-      document.getElementById('removeLogoBtn').classList.remove('hidden');
-    }
-  }
-}
-
-function saveData() {
-  const data = {
-    bizName: document.getElementById('bizName').value,
-    bankName: document.getElementById('bankName').value,
-    accNumber: document.getElementById('accNumber').value,
-    accName: document.getElementById('accName').value,
-    currency: currency,
-    isPro: isPro,
-    logo: savedLogoBase64
-  };
-  localStorage.setItem('vendslip_data', JSON.stringify(data));
-}
-
-// --- Theme Toggle ---
-document.getElementById('themeToggle').addEventListener('click', () => {
-  const html = document.documentElement;
-  const moon = document.getElementById('iconMoon');
-  const sun = document.getElementById('iconSun');
-  
-  if (html.getAttribute('data-theme') === 'dark') {
-    html.setAttribute('data-theme', 'light');
-    moon.classList.remove('hidden');
-    sun.classList.add('hidden');
-  } else {
-    html.setAttribute('data-theme', 'dark');
-    moon.classList.add('hidden');
-    sun.classList.remove('hidden');
-  }
-});
-
-// --- Mobile Tabs ---
 function switchTab(tab) {
-  const editCol = document.getElementById('editCol');
-  const previewCol = document.getElementById('previewCol');
-  const btnEdit = document.getElementById('tabEdit');
-  const btnPrev = document.getElementById('tabPreview');
-
-  if (tab === 'edit') {
-    editCol.style.display = 'block';
-    previewCol.style.display = 'none';
-    btnEdit.classList.add('active');
-    btnPrev.classList.remove('active');
-  } else {
-    editCol.style.display = 'none';
-    previewCol.style.display = 'block';
-    btnPrev.classList.add('active');
-    btnEdit.classList.remove('active');
-    updatePreview();
-  }
-}
-
-// --- Form Logic ---
-function setCurrency(btn) {
-  document.querySelectorAll('#currencyWrap .currency-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  currency = btn.dataset.sym;
-  updatePreview();
-}
-
-function setStatus(btn) {
-  document.querySelectorAll('.status-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  status = btn.dataset.status;
-  
-  const bankForm = document.getElementById('bankDetailsForm');
-  const amountPaidWrapper = document.getElementById('amountPaidWrapper');
-  
-  if (status === 'Paid') {
-    bankForm.classList.add('hidden');
-    amountPaidWrapper.classList.add('hidden');
-    // Auto-fill amount paid if Paid
-    document.getElementById('amountPaid').value = document.getElementById('receiptTotal').textContent.replace(/[^0-9.]/g, '') || 0;
-  } else {
-    bankForm.classList.remove('hidden');
-    amountPaidWrapper.classList.remove('hidden');
-  }
-  updatePreview();
-}
-
-function addItem() {
-  const container = document.getElementById('itemsContainer');
-  const div = document.createElement('div');
-  div.className = 'item-row';
-  div.style.marginBottom = '12px';
-  div.innerHTML = `
-    <div class="input-group" style="margin-bottom: 8px;">
-      <label>Item Description</label>
-      <input type="text" class="item-name" placeholder="Item" oninput="updatePreview()">
-    </div>
-    <div class="input-row">
-      <div class="input-group" style="margin-bottom: 0;">
-        <label>Qty</label>
-        <input type="number" class="item-qty" value="1" min="1" oninput="updatePreview()">
-      </div>
-      <div class="input-group" style="margin-bottom: 0;">
-        <label>Unit Price</label>
-        <input type="number" class="item-price" placeholder="0.00" oninput="updatePreview()">
-      </div>
-    </div>
-  `;
-  container.appendChild(div);
-  updatePreview();
-}
-
-// --- Preview Logic ---
-function formatMoney(amount) {
-  return currency + amount.toLocaleString();
-}
-
-function updatePreview() {
-  const bizName = document.getElementById('bizName').value || 'My Business';
-  document.getElementById('receiptBizName').textContent = bizName;
-  
-  if (!savedLogoBase64) {
-    document.getElementById('receiptLogo').innerHTML = bizName.charAt(0).toUpperCase();
-  }
-  
-  document.getElementById('receiptBuyer').textContent = document.getElementById('buyerName').value || 'Customer';
-
-  const names = document.querySelectorAll('.item-name');
-  const qtys = document.querySelectorAll('.item-qty');
-  const prices = document.querySelectorAll('.item-price');
-  const tbody = document.getElementById('receiptItems');
-  
-  let subtotal = 0;
-  tbody.innerHTML = '';
-
-  for (let i = 0; i < names.length; i++) {
-    const name = names[i].value || 'Item';
-    const qty = parseFloat(qtys[i].value) || 0;
-    const price = parseFloat(prices[i].value) || 0;
-    const lineTotal = qty * price;
-    subtotal += lineTotal;
-
-    if (name.trim() !== '' && price > 0) {
-      tbody.innerHTML += `
-        <tr>
-          <td>${name}</td>
-          <td>${qty}</td>
-          <td>${formatMoney(lineTotal)}</td>
-        </tr>
-      `;
+    if (tab === 'edit') {
+        document.getElementById('formSection').style.display = 'block';
+        document.getElementById('previewSection').style.display = 'none';
+        document.getElementById('tabEdit').classList.add('active');
+        document.getElementById('tabPreview').classList.remove('active');
+    } else {
+        document.getElementById('formSection').style.display = 'none';
+        document.getElementById('previewSection').style.display = 'block';
+        document.getElementById('tabPreview').classList.add('active');
+        document.getElementById('tabEdit').classList.remove('active');
     }
-  }
-
-  const delivery = parseFloat(document.getElementById('deliveryFee').value) || 0;
-  const total = subtotal + delivery;
-  
-  document.getElementById('receiptSubtotal').textContent = formatMoney(subtotal);
-  document.getElementById('receiptDelivery').textContent = formatMoney(delivery);
-  document.getElementById('receiptTotal').textContent = formatMoney(total);
-  document.getElementById('tabTotal').textContent = total.toLocaleString();
-
-  let amountPaid = 0;
-  if (status === 'Paid') {
-    amountPaid = total;
-    document.getElementById('amountPaid').value = total;
-  } else {
-    amountPaid = parseFloat(document.getElementById('amountPaid').value) || 0;
-  }
-  
-  const balance = total - amountPaid;
-
-  const stamp = document.getElementById('receiptStamp');
-  stamp.textContent = status === 'Part Payment' ? 'PART PAID' : status.toUpperCase();
-  
-  const balRow = document.getElementById('receiptBalanceRow');
-  if (status === 'Paid') {
-    balRow.style.display = 'none';
-  } else {
-    balRow.style.display = 'flex';
-    document.getElementById('receiptBalance').textContent = formatMoney(balance < 0 ? 0 : balance);
-  }
-
-  const rBank = document.getElementById('receiptBankDetails');
-  if (status !== 'Paid') {
-    rBank.classList.remove('hidden');
-    document.getElementById('rBankName').textContent = document.getElementById('bankName').value || '-';
-    document.getElementById('rAccNumber').textContent = document.getElementById('accNumber').value || '-';
-    document.getElementById('rAccName').textContent = document.getElementById('accName').value || '-';
-  } else {
-    rBank.classList.add('hidden');
-  }
-
-  saveData();
 }
 
-// --- Receipt Themes ---
-function setReceiptTheme(theme, btn) {
-  const banner = document.getElementById('receiptBanner');
-  banner.className = 'receipt-header-banner ' + (theme === 'emerald' ? '' : theme);
-  currentReceiptTheme = theme;
-
-  document.querySelectorAll('#themeWrap .currency-btn').forEach(b => b.style.opacity = '0.4');
-  if(btn) btn.style.opacity = '1';
-}
-
-// --- Pro Features ---
-function checkProTheme(theme, btn) {
-  if (isPro) {
-    setReceiptTheme(theme, btn);
-  } else {
-    document.getElementById('proModal').classList.add('active');
-    showToast('Upgrade to Pro to unlock Gold.');
-  }
-}
-
-document.getElementById('goProBtn').addEventListener('click', () => {
-  document.getElementById('proModal').classList.add('active');
-});
-
-function closeProModal() {
-  document.getElementById('proModal').classList.remove('active');
-}
-
-// --- Logo Upload Logic ---
-function handleLogoUpload(e) {
-  const file = e.target.files[0];
-  if (!file) return;
-
-  const reader = new FileReader();
-  reader.onload = function(event) {
-    savedLogoBase64 = event.target.result;
-    renderLogoImage();
-    document.getElementById('removeLogoBtn').classList.remove('hidden');
-    saveData();
-    showToast('Logo uploaded successfully!');
-  };
-  reader.readAsDataURL(file);
-}
-
-function renderLogoImage() {
-  const logoDiv = document.getElementById('receiptLogo');
-  logoDiv.innerHTML = `<img src="${savedLogoBase64}" alt="Logo">`;
-  logoDiv.style.background = 'transparent';
-  logoDiv.style.padding = '0';
-}
-
-function removeLogo() {
-  savedLogoBase64 = null;
-  document.getElementById('removeLogoBtn').classList.add('hidden');
-  document.getElementById('logoInput').value = '';
-  
-  const bizName = document.getElementById('bizName').value || 'My Business';
-  const logoDiv = document.getElementById('receiptLogo');
-  logoDiv.innerHTML = bizName.charAt(0).toUpperCase();
-  logoDiv.style.background = '#fff';
-  
-  saveData();
-  showToast('Logo removed.');
-}
-
-// --- Export Logic (FIXED FOR FONTS & EMOJIS) ---
-async function downloadReceipt() {
-  const receipt = document.getElementById('receiptCard');
-  const btn = document.getElementById('downloadBtn');
-  
-  btn.textContent = 'Generating...';
-  
-  try {
-    // Wait for custom fonts to load to avoid Times New Roman / broken emojis
-    if (document.fonts && document.fonts.ready) {
-      await document.fonts.ready;
-    }
-
-    const canvas = await html2canvas(receipt, { 
-      scale: 3, 
-      backgroundColor: '#ffffff',
-      useCORS: true
+function setCurrency(symbol, btn) {
+    currentCurrency = symbol;
+    document.querySelectorAll('.btn-group .toggle-btn').forEach(b => {
+        if(b.innerText.includes('NGN') || b.innerText.includes('USD') || b.innerText.includes('GBP') || b.innerText.includes('GHS')) {
+            b.classList.remove('active');
+        }
     });
-    const link = document.createElement('a');
-    link.download = `VendSlip-${currentRef}.png`;
-    link.href = canvas.toDataURL('image/png');
-    link.click();
-    showToast('Receipt saved to gallery!');
-  } catch (err) {
-    showToast('Error generating image.');
-  } finally {
-    btn.textContent = 'Download HD Receipt';
-  }
+    btn.classList.add('active');
+    updateReceipt();
 }
 
-async function shareWhatsApp() {
-  const receipt = document.getElementById('receiptCard');
-  try {
-    // Wait for custom fonts to load to avoid Times New Roman / broken emojis
-    if (document.fonts && document.fonts.ready) {
-      await document.fonts.ready;
-    }
-
-    const canvas = await html2canvas(receipt, { 
-      scale: 3, 
-      backgroundColor: '#ffffff',
-      useCORS: true
-    });
-    canvas.toBlob(async (blob) => {
-      const file = new File([blob], `VendSlip-${currentRef}.png`, { type: 'image/png' });
-      
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({
-          files: [file],
-          title: 'Receipt',
-          text: 'Here is your receipt.'
-        });
-      } else {
-        const link = document.createElement('a');
-        link.download = `VendSlip-${currentRef}.png`;
-        link.href = URL.createObjectURL(blob);
-        link.click();
-        showToast('Sharing not supported. Image downloaded instead.');
-      }
-    }, 'image/png');
-  } catch (err) {
-    showToast('Error generating image.');
-  }
+function setPaymentStatus(status) {
+    currentPaymentStatus = status;
+    document.querySelectorAll('#btnPaid, #btnPartPaid, #btnPod').forEach(btn => btn.classList.remove('active'));
+    if (status === 'PAID') document.getElementById('btnPaid').classList.add('active');
+    if (status === 'PART_PAID') document.getElementById('btnPartPaid').classList.add('active');
+    if (status === 'PAY_ON_DELIVERY') document.getElementById('btnPod').classList.add('active');
+    updateReceipt();
 }
 
-// --- Toast Utility ---
-function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 3000);
-}
-
-// --- Scroll Animations ---
-function setupScrollAnimations() {
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        entry.target.classList.add('active');
-      }
-    });
-  }, { threshold: 0.1 });
-
-  document.querySelectorAll('.reveal-on-scroll').forEach((el) => {
-    observer.observe(el);
-  });
-}
-
-// --- Tour Logic ---
-const tourSteps = [
-  {
-    title: "Welcome to VendSlip",
-    text: "The fastest way to create professional receipts for WhatsApp and IG vendors. No sign-up required."
-  },
-  {
-    title: "Real-Time Generation",
-    text: "Type your details. The receipt updates instantly. Select 'Paid' to auto-calculate, or 'Part Paid' to collect a balance."
-  },
-  {
-    title: "One-Tap Sharing",
-    text: "Tap 'Share to WhatsApp' to send a high-res image. Upgrade to Pro to remove the watermark and add your logo."
-  }
-];
-
-let currentTourStep = 0;
-
-document.getElementById('tourNextBtn').addEventListener('click', () => {
-  currentTourStep++;
-  if (currentTourStep < tourSteps.length) {
-    document.getElementById('tourTitle').textContent = tourSteps[currentTourStep].title;
-    document.getElementById('tourText').textContent = tourSteps[currentTourStep].text;
+// --- CORE LOGIC & CALCULATIONS ---
+function updateReceipt() {
+    // 1. Grab Inputs
+    const bizName = document.getElementById('bizName').value || 'Business Name';
+    const buyerName = document.getElementById('buyerName').value || 'Buyer';
     
-    document.querySelectorAll('.tour-dot').forEach((dot, index) => {
-      if (index === currentTourStep) dot.classList.add('active');
-      else dot.classList.remove('active');
-    });
+    const item1Desc = document.getElementById('item1Desc').value;
+    const item1Qty = parseFloat(document.getElementById('item1Qty').value) || 0;
+    const item1Price = parseFloat(document.getElementById('item1Price').value) || 0;
+    const item1Total = item1Qty * item1Price;
 
-    if (currentTourStep === tourSteps.length - 1) {
-      document.getElementById('tourNextBtn').textContent = 'Start Using VendSlip';
+    const item2Desc = document.getElementById('item2Desc').value;
+    const item2Qty = parseFloat(document.getElementById('item2Qty').value) || 0;
+    const item2Price = parseFloat(document.getElementById('item2Price').value) || 0;
+    const item2Total = item2Qty * item2Price;
+
+    const deliveryFee = parseFloat(document.getElementById('deliveryFee').value) || 0;
+    const amountPaid = parseFloat(document.getElementById('amountPaid').value) || 0;
+
+    // 2. Calculate Totals
+    const subtotal = item1Total + item2Total;
+    const grandTotal = subtotal + deliveryFee;
+
+    // Format Helper
+    const formatMoney = (amount) => `${currentCurrency}${amount.toLocaleString('en-NG', {minimumFractionDigits: 0})}`;
+
+    // 3. Update UI (Top Tabs & Header)
+    document.getElementById('tabTotal').innerText = formatMoney(grandTotal);
+    document.getElementById('receiptBizName').innerText = bizName;
+    document.getElementById('receiptBuyerName').innerText = buyerName;
+    document.getElementById('receiptLogoLetter').innerText = bizName.charAt(0).toUpperCase();
+
+    // 4. Handle Zero-Price Items (Hide row if price is 0)
+    const row1 = document.getElementById('row1');
+    if (item1Total > 0) {
+        row1.style.display = 'flex';
+        document.getElementById('receiptItem1Desc').innerText = item1Desc;
+        document.getElementById('receiptItem1Qty').innerText = item1Qty;
+        document.getElementById('receiptItem1Price').innerText = formatMoney(item1Total);
+    } else {
+        row1.style.display = 'none';
     }
-  } else {
-    document.getElementById('tourSheet').classList.remove('active');
-    localStorage.setItem('vendslip_tour_seen', 'true');
-    showToast('You are ready to go!');
-  }
-});
+
+    const row2 = document.getElementById('row2');
+    if (item2Total > 0) {
+        row2.style.display = 'flex';
+        document.getElementById('receiptItem2Desc').innerText = item2Desc;
+        document.getElementById('receiptItem2Qty').innerText = item2Qty;
+        document.getElementById('receiptItem2Price').innerText = formatMoney(item2Total);
+    } else {
+        row2.style.display = 'none';
+    }
+
+    // 5. Update Totals Table
+    document.getElementById('receiptSubtotal').innerText = formatMoney(subtotal);
+    document.getElementById('receiptDelivery').innerText = formatMoney(deliveryFee);
+    document.getElementById('receiptGrandTotal').innerText = formatMoney(grandTotal);
+
+    // 6. Logic: Payment Status, Stamps, Bank Details
+    const stamp = document.getElementById('deliveryStamp');
+    const balanceRow = document.getElementById('receiptBalanceRow');
+    const balanceAmount = document.getElementById('receiptBalanceAmount');
+    const bankDetails = document.getElementById('bankDetailsContainer');
+    const podNote = document.getElementById('podNote');
+    const amountPaidContainer = document.getElementById('amountPaidContainer');
+
+    if (currentPaymentStatus === 'PAID') {
+        stamp.style.display = 'none';
+        balanceRow.style.display = 'none';
+        podNote.style.display = 'none';
+        bankDetails.style.display = 'block';
+        amountPaidContainer.style.display = 'none';
+    } 
+    else if (currentPaymentStatus === 'PART_PAID') {
+        stamp.style.display = 'none';
+        podNote.style.display = 'none';
+        bankDetails.style.display = 'block';
+        amountPaidContainer.style.display = 'block';
+        
+        let balance = grandTotal - amountPaid;
+        if (balance < 0) balance = 0; // Prevent negative math
+        
+        balanceRow.style.display = 'flex';
+        balanceAmount.innerText = formatMoney(balance);
+    } 
+    else if (currentPaymentStatus === 'PAY_ON_DELIVERY') {
+        stamp.style.display = 'block';
+        podNote.style.display = 'block';
+        balanceRow.style.display = 'flex';
+        balanceAmount.innerText = formatMoney(grandTotal); // Full amount due
+        bankDetails.style.display = 'none'; // Hide bank details for cash
+        amountPaidContainer.style.display = 'none';
+    }
+}
+
+// --- IMAGE GENERATION & SHARING ---
+function generateCanvas() {
+    const receipt = document.getElementById('receiptCard');
+    // Ensure we capture it exactly as rendered
+    return html2canvas(receipt, { 
+        scale: 3, 
+        backgroundColor: '#ffffff',
+        useCORS: true
+    });
+}
+
+function downloadImage() {
+    generateCanvas().then(canvas => {
+        const link = document.createElement('a');
+        link.download = 'VendSlip-Receipt.png';
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+    });
+}
+
+async function shareImage() {
+    try {
+        const canvas = await generateCanvas();
+        canvas.toBlob(async (blob) => {
+            const file = new File([blob], 'receipt.png', { type: 'image/png' });
+            
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                await navigator.share({
+                    files: [file],
+                    title: 'Receipt',
+                    text: 'Here is your receipt from ' + document.getElementById('bizName').value
+                });
+            } else {
+                alert('Sharing is not supported on this browser. Downloading instead.');
+                downloadImage();
+            }
+        }, 'image/png');
+    } catch (err) {
+        console.error('Error sharing:', err);
+    }
+}

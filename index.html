@@ -1,241 +1,186 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>VendSlip | Instant Receipts</title>
-  <link rel="icon" type="image/jpeg" href="Vendslip.jpg">
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VendSlip | Instant Receipts</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- html2canvas for downloading/sharing the image -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body>
 
-  <header>
-    <div class="brand">
-      <img src="Vendslip.jpg" alt="VendSlip" class="logo-img">
-      VendSlip
-      <span class="pro-badge" id="headerBadge" style="background: var(--border); color: var(--text-muted);">BETA</span>
-    </div>
-    <div class="header-actions">
-      <button id="themeToggle" class="icon-btn" aria-label="Toggle Theme">
-        <svg id="iconMoon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
-        <svg id="iconSun" class="hidden" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
-      </button>
-      <button class="btn-outline" id="goProBtn">Go Pro</button>
-    </div>
-  </header>
-
-  <main class="app-container">
-    
-    <div style="text-align: center; margin-bottom: 16px; padding: 0 16px;">
-      <p style="font-size: 0.85rem; color: var(--text-muted); font-weight: 500; line-height: 1.4;">
-        Instant verified receipts for social & WhatsApp vendors. No sign-up required.
-      </p>
-    </div>
-
-    <div class="mobile-tabs">
-      <button class="active" id="tabEdit" onclick="switchTab('edit')">Edit Slip</button>
-      <button id="tabPreview" onclick="switchTab('preview')">Live Preview (₦<span id="tabTotal">0</span>)</button>
-    </div>
-
-    <div class="edit-col" id="editCol">
-      <div class="card reveal-on-scroll">
-        <div class="section-title">Business Details</div>
-        <div class="input-group">
-          <label>Business Name</label>
-          <input type="text" id="bizName" placeholder="e.g. Ada's Thrifts" value="Ada's Thrifts" oninput="updatePreview()">
-          
-          <div style="display: flex; align-items: center; gap: 12px; margin-top: 8px;">
-            <button id="uploadLogoBtn" class="btn-outline" style="font-size: 0.8rem; padding: 6px 12px;">Upload Store Logo (Pro)</button>
-            <button id="removeLogoBtn" class="hidden" style="background: none; border: none; color: #E11D48; font-size: 0.8rem; font-weight: 600; cursor: pointer; text-decoration: underline;">Remove Logo</button>
-            <input type="file" id="logoInput" accept="image/*" class="hidden">
-          </div>
+    <!-- Top Navigation -->
+    <header class="navbar">
+        <div class="logo">
+            <div class="logo-icon">V</div>
+            VendSlip <span class="badge">BETA</span>
         </div>
+        <button class="btn-pro">Go Pro</button>
+    </header>
+
+    <!-- Main App Container -->
+    <main class="app-container">
         
-        <div class="section-title" style="margin-top: 24px;">Currency</div>
-        <div class="currency-wrap" id="currencyWrap">
-          <button class="currency-btn active" data-sym="₦" onclick="setCurrency(this)">₦ NGN</button>
-          <button class="currency-btn" data-sym="$" onclick="setCurrency(this)">$ USD</button>
-          <button class="currency-btn" data-sym="£" onclick="setCurrency(this)">£ GBP</button>
-          <button class="currency-btn" data-sym="₵" onclick="setCurrency(this)">₵ GHS</button>
+        <!-- Top Tabs -->
+        <div class="tabs">
+            <button class="tab active" id="tabEdit" onclick="switchTab('edit')">Edit Slip</button>
+            <button class="tab" id="tabPreview" onclick="switchTab('preview')">Live Preview (<span id="tabTotal">₦0</span>)</button>
         </div>
 
-        <div class="section-title" style="margin-top: 24px;">Buyer Info</div>
-        <div class="input-group">
-          <label>Buyer Name</label>
-          <input type="text" id="buyerName" placeholder="Customer name" value="John Doe" oninput="updatePreview()">
-        </div>
-      </div>
+        <!-- Form Section -->
+        <section id="formSection">
+            <div class="card">
+                <div class="section-title">Business Details</div>
+                <input type="text" id="bizName" value="Ada's Thrifts" placeholder="Business Name" oninput="updateReceipt()">
+                
+                <div class="section-title" style="margin-top: 15px;">Currency</div>
+                <div class="btn-group">
+                    <button class="toggle-btn active" onclick="setCurrency('₦', this)">₦ NGN</button>
+                    <button class="toggle-btn" onclick="setCurrency('$', this)">$ USD</button>
+                    <button class="toggle-btn" onclick="setCurrency('£', this)">£ GBP</button>
+                    <button class="toggle-btn" onclick="setCurrency('₵', this)">₵ GHS</button>
+                </div>
 
-      <div class="card reveal-on-scroll">
-        <div class="section-title">Items</div>
-        <div id="itemsContainer">
-          <div class="item-row" style="margin-bottom: 12px;">
-            <div class="input-group" style="margin-bottom: 8px;">
-              <label>Item Description</label>
-              <input type="text" class="item-name" placeholder="e.g. Vintage Denim Jacket" value="Vintage Denim Jacket" oninput="updatePreview()">
+                <div class="section-title">Buyer Info</div>
+                <input type="text" id="buyerName" value="John Doe" placeholder="Buyer Name" oninput="updateReceipt()">
             </div>
-            <div class="input-row">
-              <div class="input-group" style="margin-bottom: 0;">
-                <label>Qty</label>
-                <input type="number" class="item-qty" value="1" min="1" oninput="updatePreview()">
-              </div>
-              <div class="input-group" style="margin-bottom: 0;">
-                <label>Unit Price</label>
-                <input type="number" class="item-price" value="15000" placeholder="0.00" oninput="updatePreview()">
-              </div>
-            </div>
-          </div>
-        </div>
-        <button class="btn-outline" style="width: 100%; margin-top: 8px; border-style: dashed;" onclick="addItem()">+ Add Another Item</button>
-      </div>
 
-      <div class="card reveal-on-scroll">
-        <div class="section-title">Payment Status</div>
-        <div class="status-grid" id="statusGrid">
-          <button class="status-btn active" data-status="Paid" onclick="setStatus(this)">PAID</button>
-          <button class="status-btn" data-status="Part Payment" onclick="setStatus(this)">PART PAID</button>
-          <button class="status-btn" data-status="Pay on Delivery" onclick="setStatus(this)">PAY ON DELIVERY</button>
-        </div>
+            <div class="card">
+                <div class="section-title">Items</div>
+                <input type="text" id="item1Desc" value="Vintage Denim Jacket" placeholder="Item Description" oninput="updateReceipt()">
+                <div class="row">
+                    <input type="number" id="item1Qty" value="1" placeholder="Qty" oninput="updateReceipt()">
+                    <input type="number" id="item1Price" value="15000" placeholder="Unit Price" oninput="updateReceipt()">
+                </div>
+                
+                <div class="divider"></div>
 
-        <div class="input-row" style="margin-top: 16px;">
-          <div class="input-group">
-            <label>Delivery Fee</label>
-            <input type="number" id="deliveryFee" value="2000" placeholder="0.00" oninput="updatePreview()">
-          </div>
-          <div class="input-group hidden" id="amountPaidWrapper">
-            <label>Amount Paid So Far</label>
-            <input type="number" id="amountPaid" value="0" placeholder="0.00" oninput="updatePreview()">
-          </div>
-        </div>
+                <input type="text" id="item2Desc" value="Wrapper" placeholder="Item Description (Optional)" oninput="updateReceipt()">
+                <div class="row">
+                    <input type="number" id="item2Qty" value="1" placeholder="Qty" oninput="updateReceipt()">
+                    <input type="number" id="item2Price" value="0" placeholder="Unit Price" oninput="updateReceipt()">
+                </div>
 
-        <div id="bankDetailsForm" class="hidden" style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border);">
-          <div class="section-title">Bank Transfer Details</div>
-          <div class="input-group">
-            <label>Bank Name</label>
-            <input type="text" id="bankName" placeholder="e.g. GTBank" value="GTBank" oninput="updatePreview()">
-          </div>
-          <div class="input-row">
-            <div class="input-group">
-              <label>Account Number</label>
-              <input type="text" id="accNumber" placeholder="0123456789" value="0123456789" oninput="updatePreview()">
+                <button class="btn-add-item">+ Add Another Item</button>
             </div>
-            <div class="input-group">
-              <label>Account Name</label>
-              <input type="text" id="accName" placeholder="Ada Okafor" value="Ada Okafor" oninput="updatePreview()">
+
+            <div class="card">
+                <div class="section-title">Payment Status</div>
+                <div class="btn-group">
+                    <button class="toggle-btn active" id="btnPartPaid" onclick="setPaymentStatus('PART_PAID')">PART PAID</button>
+                    <button class="toggle-btn" id="btnPaid" onclick="setPaymentStatus('PAID')">PAID</button>
+                    <button class="toggle-btn" id="btnPod" onclick="setPaymentStatus('PAY_ON_DELIVERY')">PAY ON DELIVERY</button>
+                </div>
+
+                <div class="row">
+                    <div>
+                        <div class="section-title">Delivery Fee</div>
+                        <input type="number" id="deliveryFee" value="2000" placeholder="Delivery Fee" oninput="updateReceipt()">
+                    </div>
+                    <div id="amountPaidContainer">
+                        <div class="section-title">Amount Paid So Far</div>
+                        <input type="number" id="amountPaid" value="3000" placeholder="Amount Paid" oninput="updateReceipt()">
+                    </div>
+                </div>
             </div>
-          </div>
+        </section>
+
+        <!-- Live Preview Section -->
+        <section id="previewSection" style="display: none;">
+            <div class="receipt-card" id="receiptCard">
+                
+                <!-- The Dynamic Stamp -->
+                <div class="stamp" id="deliveryStamp">PAY ON DELIVERY</div>
+
+                <!-- Header -->
+                <div class="r-header">
+                    <div class="r-biz-info">
+                        <div class="r-logo" id="receiptLogoLetter">A</div>
+                        <div>
+                            <div class="r-biz-name" id="receiptBizName">Ada's Thrifts</div>
+                            <div class="r-date" id="receiptDate">Nov 15, 2026</div>
+                            <div class="r-ref">Ref: <span id="receiptRef">VS-XXXXX</span></div>
+                        </div>
+                    </div>
+                    <div class="r-buyer">
+                        <div class="r-label">Billed to:</div>
+                        <div class="r-buyer-name" id="receiptBuyerName">John Doe</div>
+                    </div>
+                </div>
+
+                <!-- Items List -->
+                <div class="r-table">
+                    <div class="r-table-header">
+                        <span>Item</span>
+                        <span>Qty</span>
+                        <span style="text-align: right;">Price</span>
+                    </div>
+                    <div class="r-table-row" id="row1">
+                        <span id="receiptItem1Desc">Vintage Denim Jacket</span>
+                        <span id="receiptItem1Qty">1</span>
+                        <span id="receiptItem1Price" style="text-align: right;">₦15,000</span>
+                    </div>
+                    <div class="r-table-row" id="row2">
+                        <span id="receiptItem2Desc">Wrapper</span>
+                        <span id="receiptItem2Qty">1</span>
+                        <span id="receiptItem2Price" style="text-align: right;">₦0</span>
+                    </div>
+                </div>
+
+                <!-- Totals -->
+                <div class="r-totals">
+                    <div class="r-t-row">
+                        <span>Subtotal</span>
+                        <span id="receiptSubtotal">₦15,000</span>
+                    </div>
+                    <div class="r-t-row">
+                        <span>Delivery</span>
+                        <span id="receiptDelivery">₦2,000</span>
+                    </div>
+                    <div class="r-t-row total">
+                        <span>Total</span>
+                        <span id="receiptGrandTotal">₦17,000</span>
+                    </div>
+                    <!-- Balance Row (Hidden by default) -->
+                    <div class="r-t-row balance" id="receiptBalanceRow">
+                        <span>Balance Due</span>
+                        <span id="receiptBalanceAmount">₦14,000</span>
+                    </div>
+                </div>
+
+                <!-- POD Note -->
+                <div class="pod-note" id="podNote">*Please have exact cash ready for the dispatch rider.*</div>
+
+                <!-- Bank Details -->
+                <div class="r-bank-box" id="bankDetailsContainer">
+                    <div class="r-bank-title">Pay To (Seller):</div>
+                    <div class="r-bank-row">Bank: <strong>GTBank</strong></div>
+                    <div class="r-bank-row">Acct No: <strong>0123456789</strong></div>
+                    <div class="r-bank-row">Acct Name: <strong>Ada Okafor</strong></div>
+                </div>
+
+                <!-- Footer -->
+                <div class="r-footer">Verified via VendSlip.com</div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="action-buttons">
+                <button class="btn-secondary" onclick="downloadImage()">Save Image</button>
+                <button class="btn-primary" onclick="shareImage()">Share to WhatsApp</button>
+            </div>
+        </section>
+    </main>
+
+    <!-- Onboarding Tour (Bottom Sheet) -->
+    <div class="tour-sheet" id="tourSheet">
+        <div class="tour-content">
+            <h2 class="tour-title">Welcome to VendSlip 👋</h2>
+            <p class="tour-text">The fastest way to create professional receipts for your WhatsApp and IG customers. No sign-up required.</p>
+            <button class="btn-tour" onclick="closeTour()">Got it</button>
         </div>
-      </div>
     </div>
 
-    <div class="preview-col" id="previewCol" style="display: none;">
-      <div class="receipt-container">
-        <div class="receipt-card" id="receiptCard">
-          
-          <div class="receipt-header-banner" id="receiptBanner">
-            <div class="biz-logo" id="receiptLogo">A</div>
-            <div class="stamp" id="receiptStamp">PAID</div>
-          </div>
-
-          <div class="receipt-body">
-            <div class="receipt-meta">
-              <div>
-                <strong style="color: #0F172A; font-size: 1rem;" id="receiptBizName">Ada's Thrifts</strong><br>
-                <span id="receiptDate">Oct 24, 2023</span><br>
-                <span style="font-size: 0.7rem; color: #94A3B8;">Ref: <span id="receiptRef">VS-XXXXX</span></span>
-              </div>
-              <div style="text-align: right;">
-                <span>Billed to:</span><br>
-                <strong style="color: #0F172A;" id="receiptBuyer">John Doe</strong>
-              </div>
-            </div>
-
-            <table class="receipt-table">
-              <thead>
-                <tr>
-                  <th>Item</th>
-                  <th>Qty</th>
-                  <th>Price</th>
-                </tr>
-              </thead>
-              <tbody id="receiptItems"></tbody>
-            </table>
-
-            <div class="receipt-totals">
-              <div class="t-row"><span>Subtotal</span> <span id="receiptSubtotal">₦15,000</span></div>
-              <div class="t-row"><span>Delivery</span> <span id="receiptDelivery">₦2,000</span></div>
-              <div class="t-row grand"><span>Total</span> <span id="receiptTotal">₦17,000</span></div>
-              <div class="t-row" id="receiptBalanceRow" style="color: #E11D48; margin-top: 8px;">
-                <span>Balance Due</span> <span id="receiptBalance">₦17,000</span>
-              </div>
-            </div>
-
-            <div class="bank-details hidden" id="receiptBankDetails">
-              <p style="font-weight: 600; color: #0F172A; margin-bottom: 8px;">Payment Details:</p>
-              <p>Bank: <strong id="rBankName">GTBank</strong></p>
-              <p>Acct No: <strong id="rAccNumber">0123456789</strong></p>
-              <p>Acct Name: <strong id="rAccName">Ada Okafor</strong></p>
-            </div>
-          </div>
-
-          <div class="receipt-zigzag"></div>
-          <div class="receipt-watermark" id="receiptWatermark">Verified via VendSlip.com</div>
-        </div>
-      </div>
-
-      <div class="card reveal-on-scroll" style="padding: 16px; margin-bottom: 16px;">
-        <label style="margin-bottom: 8px;">Receipt Theme</label>
-        <div class="currency-wrap" id="themeWrap">
-          <button class="currency-btn active" style="background: #10B981; border-color: #10B981; color: #fff;" onclick="setReceiptTheme('emerald', this)">Emerald</button>
-          <button class="currency-btn" style="background: #4F46E5; border-color: #4F46E5; color: #fff;" onclick="setReceiptTheme('indigo', this)">Indigo</button>
-          <button class="currency-btn" style="background: #18181B; border-color: #18181B; color: #fff;" onclick="setReceiptTheme('onyx', this)">Onyx</button>
-          <button class="currency-btn" style="background: #E11D48; border-color: #E11D48; color: #fff;" onclick="setReceiptTheme('rose', this)">Rose</button>
-          <button class="currency-btn" style="background: linear-gradient(135deg, #F59E0B, #B45309); border: none; color: #fff;" onclick="checkProTheme('gold', this)">Gold</button>
-        </div>
-      </div>
-
-      <div class="input-row reveal-on-scroll">
-        <button class="btn-primary" onclick="downloadReceipt()" id="downloadBtn">Download HD Receipt</button>
-        <button class="btn-primary" style="background: #25D366;" onclick="shareWhatsApp()">Share to WhatsApp</button>
-      </div>
-    </div>
-
-  </main>
-
-  <div class="modal-overlay" id="proModal">
-    <div class="modal-content">
-      <h2 style="font-size: 1.5rem; margin-bottom: 8px; font-weight: 700;">Upgrade to VendSlip Pro</h2>
-      <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 24px;">Stand out with premium features designed for serious vendors.</p>
-      
-      <ul style="list-style: none; margin-bottom: 24px; font-size: 0.95rem; line-height: 2;">
-        <li style="display: flex; align-items: center; gap: 8px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg> Remove VendSlip Watermark</li>
-        <li style="display: flex; align-items: center; gap: 8px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg> Upload Your Business Logo</li>
-        <li style="display: flex; align-items: center; gap: 8px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg> Luxury Gold Theme</li>
-      </ul>
-
-      <a id="paystackLink" href="https://paystack.shop/pay/30uz0wj30l" class="btn-primary" style="display: block; text-align: center; text-decoration: none; margin-bottom: 12px;">Upgrade Now — ₦2,000</a>
-      <button class="btn-outline" style="width: 100%;" onclick="closeProModal()">Maybe Later</button>
-    </div>
-  </div>
-
-  <div class="tour-bottom-sheet" id="tourSheet">
-    <div class="tour-content">
-      <h3 id="tourTitle">Welcome to VendSlip</h3>
-      <p id="tourText">The fastest way to create professional receipts for WhatsApp and IG vendors. No sign-up required.</p>
-      <div class="tour-nav">
-        <div class="tour-dots">
-          <div class="tour-dot active"></div>
-          <div class="tour-dot"></div>
-          <div class="tour-dot"></div>
-        </div>
-        <button class="tour-btn" id="tourNextBtn">Next</button>
-      </div>
-    </div>
-  </div>
-
-  <div id="toast" class="toast">Saved!</div>
-
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-  <script src="app.js"></script>
+    <script src="app.js"></script>
 </body>
 </html>
