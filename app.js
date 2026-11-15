@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   loadSavedData();
-  generateRef(); // Create a new reference ID on load
+  generateRef();
 
   const urlParams = new URLSearchParams(window.location.search);
   if (urlParams.has('pro_success') || urlParams.has('reference') || urlParams.has('trxref')) {
@@ -44,12 +44,12 @@ document.addEventListener('DOMContentLoaded', () => {
   updatePreview();
   setupScrollAnimations();
 
-  // Onboarding Tour
+  // Onboarding Tour (Triggers 1.5s after load, before user can click into a field and open keyboard)
   const hasSeenTour = localStorage.getItem('vendslip_tour_seen');
   if (!hasSeenTour) {
     setTimeout(() => {
       document.getElementById('tourSheet').classList.add('active');
-    }, 1000);
+    }, 1500);
   }
 });
 
@@ -249,17 +249,15 @@ function updatePreview() {
   const delivery = parseFloat(document.getElementById('deliveryFee').value) || 0;
   const total = subtotal + delivery;
   
-  // Update total display first so the "Paid" auto-fill can read it
   document.getElementById('receiptSubtotal').textContent = formatMoney(subtotal);
   document.getElementById('receiptDelivery').textContent = formatMoney(delivery);
   document.getElementById('receiptTotal').textContent = formatMoney(total);
   document.getElementById('tabTotal').textContent = total.toLocaleString();
 
-  // Logic for Paid vs Part Paid
   let amountPaid = 0;
   if (status === 'Paid') {
     amountPaid = total;
-    document.getElementById('amountPaid').value = total; // Sync input
+    document.getElementById('amountPaid').value = total;
   } else {
     amountPaid = parseFloat(document.getElementById('amountPaid').value) || 0;
   }
@@ -355,7 +353,7 @@ function removeLogo() {
   showToast('Logo removed.');
 }
 
-// --- Export Logic ---
+// --- Export Logic (FIXED FOR FONTS & EMOJIS) ---
 async function downloadReceipt() {
   const receipt = document.getElementById('receiptCard');
   const btn = document.getElementById('downloadBtn');
@@ -363,7 +361,16 @@ async function downloadReceipt() {
   btn.textContent = 'Generating...';
   
   try {
-    const canvas = await html2canvas(receipt, { scale: 3, backgroundColor: '#ffffff' });
+    // Wait for custom fonts to load to avoid Times New Roman / broken emojis
+    if (document.fonts && document.fonts.ready) {
+      await document.fonts.ready;
+    }
+
+    const canvas = await html2canvas(receipt, { 
+      scale: 3, 
+      backgroundColor: '#ffffff',
+      useCORS: true
+    });
     const link = document.createElement('a');
     link.download = `VendSlip-${currentRef}.png`;
     link.href = canvas.toDataURL('image/png');
@@ -379,7 +386,16 @@ async function downloadReceipt() {
 async function shareWhatsApp() {
   const receipt = document.getElementById('receiptCard');
   try {
-    const canvas = await html2canvas(receipt, { scale: 3, backgroundColor: '#ffffff' });
+    // Wait for custom fonts to load to avoid Times New Roman / broken emojis
+    if (document.fonts && document.fonts.ready) {
+      await document.fonts.ready;
+    }
+
+    const canvas = await html2canvas(receipt, { 
+      scale: 3, 
+      backgroundColor: '#ffffff',
+      useCORS: true
+    });
     canvas.toBlob(async (blob) => {
       const file = new File([blob], `VendSlip-${currentRef}.png`, { type: 'image/png' });
       
