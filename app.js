@@ -6,11 +6,11 @@ let currentReceiptTheme = 'emerald';
 let savedLogoBase64 = null;
 let currentRef = '';
 
-// --- Init & Security Check ---
+// --- Init & Local Storage ---
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('receiptDate').textContent = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
   
-  if(window.innerWidth < 768) {
+  if(window.innerWidth < 900) {
     document.getElementById('previewCol').style.display = 'none';
     document.getElementById('editCol').style.display = 'block';
   } else {
@@ -19,27 +19,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
   loadSavedData();
   generateRef();
-  initGyroscope(); // Mobile 3D magic
+  addItem(); // Start with one item row
 
-  // SECURE PAYWALL CHECK
+  // Paystack Secure Redirect
   const urlParams = new URLSearchParams(window.location.search);
-  const sig = urlParams.get('sig');
-  const success = urlParams.get('success') || urlParams.get('trxref') || urlParams.get('reference');
-
-  // Requires BOTH the success flag and your secret signature to unlock
-  if (success && sig === 'VendSlipSecret99') {
-    if (!isPro) {
+  if (urlParams.has('success')) {
+    const sig = urlParams.get('sig');
+    if (sig === 'VendSlipSecret99') {
       activatePro();
       showToast('Upgrade successful! VendSlip Pro is now active.');
+      window.history.replaceState({}, document.title, window.location.pathname);
+    } else {
+      showToast('Security Error: Invalid payment signature.');
     }
-    // Clean the URL for aesthetics
-    window.history.replaceState({}, document.title, window.location.pathname);
-  } else if (success && sig !== 'VendSlipSecret99') {
-    // Caught a hacker trying ?success=true
-    showToast('Invalid payment signature.');
-    window.history.replaceState({}, document.title, window.location.pathname);
   }
 
+  // Logo Upload Listeners
   document.getElementById('uploadLogoBtn').addEventListener('click', () => {
     if (!isPro) {
       document.getElementById('proModal').classList.add('active');
@@ -52,67 +47,45 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('logoInput').addEventListener('change', handleLogoUpload);
   document.getElementById('removeLogoBtn').addEventListener('click', removeLogo);
 
-  updatePreview();
-  setupScrollAnimations();
+  // Theme Toggle
+  document.getElementById('themeToggle').addEventListener('click', () => {
+    const html = document.documentElement;
+    const moon = document.getElementById('iconMoon');
+    const sun = document.getElementById('iconSun');
+    
+    if (html.getAttribute('data-theme') === 'dark') {
+      html.setAttribute('data-theme', 'light');
+      moon.classList.remove('hidden');
+      sun.classList.add('hidden');
+    } else {
+      html.setAttribute('data-theme', 'dark');
+      moon.classList.add('hidden');
+      sun.classList.remove('hidden');
+    }
+  });
 
-  // Onboarding Tour
+  document.getElementById('goProBtn').addEventListener('click', () => {
+    document.getElementById('proModal').classList.add('active');
+  });
+
+  updatePreview();
+  init3DTilt();
+
+  // Onboarding Tour (Triggers 1s after load)
   const hasSeenTour = localStorage.getItem('vendslip_tour_seen');
   if (!hasSeenTour) {
     setTimeout(() => {
       document.getElementById('tourSheet').classList.add('active');
-    }, 1500);
+    }, 1000);
   }
 });
 
-// --- 3D Tilt (Desktop) & Gyroscope (Mobile) ---
-function initGyroscope() {
-  if (window.DeviceOrientationEvent) {
-    window.addEventListener('deviceorientation', handleOrientation, true);
-  }
-}
-
-function handleOrientation(event) {
-  if (window.innerWidth >= 768) return; // Only apply on mobile
-  const card = document.getElementById('receiptCard');
-  if (!card) return;
-
-  const beta = event.beta;  // X-axis (front to back)
-  const gamma = event.gamma; // Y-axis (left to right)
-
-  // Clamp the values to avoid extreme rotations
-  const rotateX = Math.max(-15, Math.min(15, beta - 45)); 
-  const rotateY = Math.max(-15, Math.min(15, gamma));
-
-  card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02, 1.02, 1.02)`;
-}
-
-// Keep the mouse tilt for desktop
-function tiltCard(e) {
-  if(window.innerWidth < 768) return;
-  const card = document.getElementById('receiptCard');
-  const rect = card.getBoundingClientRect();
-  const x = e.clientX - rect.left;
-  const y = e.clientY - rect.top;
-  
-  const centerX = rect.width / 2;
-  const centerY = rect.height / 2;
-  
-  const rotateX = ((y - centerY) / centerY) * -10;
-  const rotateY = ((x - centerX) / centerX) * 10;
-  
-  card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02, 1.02, 1.02)`;
-}
-
-function resetTilt() {
-  const card = document.getElementById('receiptCard');
-  card.style.transform = `perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)`;
-}
-
-// --- Core Logic (Same as before) ---
 function generateRef() {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
   let ref = 'VS-';
-  for (let i = 0; i < 5; i++) ref += chars.charAt(Math.floor(Math.random() * chars.length));
+  for (let i = 0; i < 5; i++) {
+    ref += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
   currentRef = ref;
   document.getElementById('receiptRef').textContent = ref;
 }
@@ -122,9 +95,9 @@ function activatePro() {
   document.getElementById('receiptWatermark').classList.add('hidden');
   const badge = document.getElementById('headerBadge');
   badge.textContent = 'PRO';
-  badge.classList.add('pro-active');
+  badge.style.background = 'linear-gradient(135deg, #10B981 0%, #4F46E5 100%)';
+  badge.style.color = '#ffffff';
   saveData();
-  updatePreview();
 }
 
 function loadSavedData() {
@@ -134,6 +107,7 @@ function loadSavedData() {
     if (saved.bankName) document.getElementById('bankName').value = saved.bankName;
     if (saved.accNumber) document.getElementById('accNumber').value = saved.accNumber;
     if (saved.accName) document.getElementById('accName').value = saved.accName;
+    
     if (saved.currency) {
       currency = saved.currency;
       document.querySelectorAll('#currencyWrap .currency-btn').forEach(b => {
@@ -141,7 +115,11 @@ function loadSavedData() {
         else b.classList.remove('active');
       });
     }
-    if (saved.isPro) activatePro();
+
+    if (saved.isPro) {
+      activatePro();
+    }
+
     if (saved.logo) {
       savedLogoBase64 = saved.logo;
       renderLogoImage();
@@ -156,63 +134,66 @@ function saveData() {
     bankName: document.getElementById('bankName').value,
     accNumber: document.getElementById('accNumber').value,
     accName: document.getElementById('accName').value,
-    currency: currency, isPro: isPro, logo: savedLogoBase64
+    currency: currency,
+    isPro: isPro,
+    logo: savedLogoBase64
   };
   localStorage.setItem('vendslip_data', JSON.stringify(data));
 }
 
-document.getElementById('themeToggle').addEventListener('click', () => {
-  const html = document.documentElement;
-  const moon = document.getElementById('iconMoon');
-  const sun = document.getElementById('iconSun');
-  if (html.getAttribute('data-theme') === 'dark') {
-    html.setAttribute('data-theme', 'light'); moon.classList.remove('hidden'); sun.classList.add('hidden');
-  } else {
-    html.setAttribute('data-theme', 'dark'); moon.classList.add('hidden'); sun.classList.remove('hidden');
-  }
-});
-
+// --- Navigation ---
 function switchTab(tab) {
   const editCol = document.getElementById('editCol');
   const previewCol = document.getElementById('previewCol');
   const btnEdit = document.getElementById('tabEdit');
   const btnPrev = document.getElementById('tabPreview');
+
   if (tab === 'edit') {
-    editCol.style.display = 'block'; previewCol.style.display = 'none';
-    btnEdit.classList.add('active'); btnPrev.classList.remove('active');
+    editCol.style.display = 'block';
+    previewCol.style.display = 'none';
+    btnEdit.classList.add('active');
+    btnPrev.classList.remove('active');
   } else {
-    editCol.style.display = 'none'; previewCol.style.display = 'block';
-    btnPrev.classList.add('active'); btnEdit.classList.remove('active'); updatePreview();
+    editCol.style.display = 'none';
+    previewCol.style.display = 'block';
+    btnPrev.classList.add('active');
+    btnEdit.classList.remove('active');
+    updatePreview();
   }
 }
 
+// --- Form Logic ---
 function setCurrency(btn) {
   document.querySelectorAll('#currencyWrap .currency-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active'); currency = btn.dataset.sym; updatePreview();
+  btn.classList.add('active');
+  currency = btn.dataset.sym;
+  updatePreview();
 }
 
 function setStatus(btn) {
   document.querySelectorAll('.status-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active'); status = btn.dataset.status;
+  btn.classList.add('active');
+  status = btn.dataset.status;
   
   const bankForm = document.getElementById('bankDetailsForm');
   const amountPaidWrapper = document.getElementById('amountPaidWrapper');
   const cashNote = document.getElementById('cashNote');
   
   if (status === 'Paid') {
-    bankForm.classList.remove('hidden'); amountPaidWrapper.classList.add('hidden'); cashNote.classList.add('hidden');
+    bankForm.classList.remove('hidden');
+    amountPaidWrapper.classList.add('hidden');
+    cashNote.classList.add('hidden');
     document.getElementById('amountPaid').value = document.getElementById('receiptTotal').textContent.replace(/[^0-9.]/g, '') || 0;
   } else if (status === 'Part Payment') {
-    bankForm.classList.remove('hidden'); amountPaidWrapper.classList.remove('hidden'); cashNote.classList.add('hidden');
+    bankForm.classList.remove('hidden');
+    amountPaidWrapper.classList.remove('hidden');
+    cashNote.classList.add('hidden');
   } else if (status === 'Pay on Delivery') {
-    bankForm.classList.add('hidden'); amountPaidWrapper.classList.add('hidden'); cashNote.classList.remove('hidden');
+    bankForm.classList.add('hidden');
+    amountPaidWrapper.classList.add('hidden');
+    cashNote.classList.remove('hidden');
   }
-  updatePreview();
-}
-
-function setPrice(btn, amount) {
-  const itemRow = btn.closest('.item-row');
-  itemRow.querySelector('.item-price').value = amount;
+  
   updatePreview();
 }
 
@@ -221,33 +202,52 @@ function addItem() {
   const div = document.createElement('div');
   div.className = 'item-row';
   div.innerHTML = `
-    <div class="item-header">
+    <button class="remove-item-btn" onclick="this.parentElement.remove(); updatePreview();">×</button>
+    <div class="input-group" style="margin-bottom: 8px;">
       <label>Item Description</label>
-      <button class="delete-item-btn" onclick="this.closest('.item-row').remove(); updatePreview();" style="background: none; border: none; color: #E11D48; font-size: 0.8rem; font-weight: 700; cursor: pointer;">Remove</button>
+      <input type="text" class="item-name" placeholder="e.g. Vintage Jacket" oninput="updatePreview()">
     </div>
-    <input type="text" class="item-name" placeholder="e.g. Vintage Denim Jacket" oninput="updatePreview()">
-    <div class="input-row mt-8">
-      <div class="input-group" style="margin-bottom: 0;"><label>Qty</label><input type="number" class="item-qty" value="1" min="1" oninput="updatePreview()"></div>
-      <div class="input-group" style="margin-bottom: 0;"><label>Unit Price</label><input type="number" class="item-price" placeholder="0.00" oninput="updatePreview()"></div>
+    <div class="input-row">
+      <div class="input-group" style="margin-bottom: 0;">
+        <label>Qty</label>
+        <input type="number" class="item-qty" value="1" min="1" oninput="updatePreview()">
+      </div>
+      <div class="input-group" style="margin-bottom: 0;">
+        <label>Unit Price</label>
+        <input type="number" class="item-price" placeholder="0.00" oninput="updatePreview()">
+      </div>
     </div>
-    <div class="quick-amounts">
-      <button type="button" class="btn-pill" onclick="setPrice(this, 1000)">₦1k</button>
-      <button type="button" class="btn-pill" onclick="setPrice(this, 5000)">₦5k</button>
-      <button type="button" class="btn-pill" onclick="setPrice(this, 10000)">₦10k</button>
-      <button type="button" class="btn-pill" onclick="setPrice(this, 25000)">₦25k</button>
+    <div class="quick-price-btns">
+      <button class="quick-price-btn" onclick="setPrice(this, 1000)">₦1k</button>
+      <button class="quick-price-btn" onclick="setPrice(this, 5000)">₦5k</button>
+      <button class="quick-price-btn" onclick="setPrice(this, 10000)">₦10k</button>
+      <button class="quick-price-btn" onclick="setPrice(this, 25000)">₦25k</button>
     </div>
   `;
   container.appendChild(div);
-  document.querySelectorAll('.delete-item-btn').forEach(btn => btn.classList.remove('hidden'));
   updatePreview();
 }
 
-function formatMoney(amount) { return currency + amount.toLocaleString(); }
+function setPrice(btn, amount) {
+  const row = btn.closest('.item-row');
+  const priceInput = row.querySelector('.item-price');
+  priceInput.value = amount;
+  updatePreview();
+}
+
+// --- Preview Logic ---
+function formatMoney(amount) {
+  return currency + amount.toLocaleString();
+}
 
 function updatePreview() {
   const bizName = document.getElementById('bizName').value || 'My Business';
   document.getElementById('receiptBizName').textContent = bizName;
-  if (!savedLogoBase64) document.getElementById('receiptLogo').innerHTML = bizName.charAt(0).toUpperCase();
+  
+  if (!savedLogoBase64) {
+    document.getElementById('receiptLogo').innerHTML = bizName.charAt(0).toUpperCase();
+  }
+  
   document.getElementById('receiptBuyer').textContent = document.getElementById('buyerName').value || 'Customer';
 
   const names = document.querySelectorAll('.item-name');
@@ -255,7 +255,8 @@ function updatePreview() {
   const prices = document.querySelectorAll('.item-price');
   const tbody = document.getElementById('receiptItems');
   
-  let subtotal = 0; tbody.innerHTML = '';
+  let subtotal = 0;
+  tbody.innerHTML = '';
 
   for (let i = 0; i < names.length; i++) {
     const name = names[i].value || 'Item';
@@ -263,8 +264,15 @@ function updatePreview() {
     const price = parseFloat(prices[i].value) || 0;
     const lineTotal = qty * price;
     subtotal += lineTotal;
+
     if (name.trim() !== '' && price > 0) {
-      tbody.innerHTML += `<tr><td>${name}</td><td>${qty}</td><td>${formatMoney(lineTotal)}</td></tr>`;
+      tbody.innerHTML += `
+        <tr>
+          <td>${name}</td>
+          <td>${qty}</td>
+          <td>${formatMoney(lineTotal)}</td>
+        </tr>
+      `;
     }
   }
 
@@ -277,23 +285,41 @@ function updatePreview() {
   document.getElementById('tabTotal').textContent = total.toLocaleString();
 
   let amountPaid = 0;
-  if (status === 'Paid') { amountPaid = total; document.getElementById('amountPaid').value = total; } 
-  else if (status === 'Part Payment') { amountPaid = parseFloat(document.getElementById('amountPaid').value) || 0; } 
-  else if (status === 'Pay on Delivery') { amountPaid = 0; }
+  if (status === 'Paid') {
+    amountPaid = total;
+    document.getElementById('amountPaid').value = total;
+  } else if (status === 'Part Payment') {
+    amountPaid = parseFloat(document.getElementById('amountPaid').value) || 0;
+  } else if (status === 'Pay on Delivery') {
+    amountPaid = 0; 
+  }
   
   const balance = Math.max(0, total - amountPaid);
 
   const stamp = document.getElementById('receiptStamp');
-  if (status === 'Part Payment') stamp.textContent = 'PART PAID';
-  else if (status === 'Pay on Delivery') stamp.textContent = 'PAY ON DELIVERY';
-  else stamp.textContent = 'PAID';
+  if (status === 'Part Payment') {
+    stamp.textContent = 'PART PAID';
+  } else if (status === 'Pay on Delivery') {
+    stamp.textContent = 'PAY ON DELIVERY';
+  } else {
+    stamp.textContent = 'PAID';
+  }
   
-  // Re-trigger stamp animation on status change
-  stamp.style.animation = 'none'; stamp.offsetHeight; stamp.style.animation = 'stampSlam 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards';
+  // Re-trigger stamp animation
+  stamp.style.animation = 'none';
+  stamp.offsetHeight; 
+  stamp.style.animation = null; 
 
   const balRow = document.getElementById('receiptBalanceRow');
-  if (status === 'Paid') balRow.classList.add('hidden');
-  else { balRow.classList.remove('hidden'); document.getElementById('receiptBalance').textContent = formatMoney(status === 'Part Payment' ? balance : total); }
+  if (status === 'Paid') {
+    balRow.style.display = 'none';
+  } else if (status === 'Part Payment') {
+    balRow.style.display = 'flex';
+    document.getElementById('receiptBalance').textContent = formatMoney(balance);
+  } else if (status === 'Pay on Delivery') {
+    balRow.style.display = 'flex';
+    document.getElementById('receiptBalance').textContent = formatMoney(total); 
+  }
 
   const rBank = document.getElementById('receiptBankDetails');
   if (status === 'Paid' || status === 'Part Payment') {
@@ -301,34 +327,47 @@ function updatePreview() {
     document.getElementById('rBankName').textContent = document.getElementById('bankName').value || '-';
     document.getElementById('rAccNumber').textContent = document.getElementById('accNumber').value || '-';
     document.getElementById('rAccName').textContent = document.getElementById('accName').value || '-';
-  } else rBank.classList.add('hidden');
+  } else {
+    rBank.classList.add('hidden');
+  }
 
   saveData();
 }
 
+// --- Themes ---
 function setReceiptTheme(theme, btn) {
   const banner = document.getElementById('receiptBanner');
   banner.className = 'receipt-header-banner ' + (theme === 'emerald' ? '' : theme);
   currentReceiptTheme = theme;
-  document.querySelectorAll('#themeWrap .currency-btn').forEach(b => b.classList.remove('active'));
-  if(btn) btn.classList.add('active');
+  document.querySelectorAll('#themeWrap .currency-btn').forEach(b => b.style.opacity = '0.4');
+  if(btn) btn.style.opacity = '1';
 }
 
 function checkProTheme(theme, btn) {
-  if (isPro) setReceiptTheme(theme, btn);
-  else { document.getElementById('proModal').classList.add('active'); showToast('Upgrade to Pro to unlock Gold.'); }
+  if (isPro) {
+    setReceiptTheme(theme, btn);
+  } else {
+    document.getElementById('proModal').classList.add('active');
+    showToast('Upgrade to Pro to unlock Gold.');
+  }
 }
 
-document.getElementById('goProBtn').addEventListener('click', () => document.getElementById('proModal').classList.add('active'));
-function closeProModal() { document.getElementById('proModal').classList.remove('active'); }
+function closeProModal() {
+  document.getElementById('proModal').classList.remove('active');
+}
 
+// --- Logo Upload ---
 function handleLogoUpload(e) {
-  const file = e.target.files[0]; if (!file) return;
+  const file = e.target.files[0];
+  if (!file) return;
+
   const reader = new FileReader();
   reader.onload = function(event) {
-    savedLogoBase64 = event.target.result; renderLogoImage();
+    savedLogoBase64 = event.target.result;
+    renderLogoImage();
     document.getElementById('removeLogoBtn').classList.remove('hidden');
-    saveData(); showToast('Logo uploaded successfully!');
+    saveData();
+    showToast('Logo uploaded successfully!');
   };
   reader.readAsDataURL(file);
 }
@@ -336,7 +375,8 @@ function handleLogoUpload(e) {
 function renderLogoImage() {
   const logoDiv = document.getElementById('receiptLogo');
   logoDiv.innerHTML = `<img src="${savedLogoBase64}" alt="Logo">`;
-  logoDiv.style.background = 'transparent'; logoDiv.style.padding = '0';
+  logoDiv.style.background = 'transparent';
+  logoDiv.style.padding = '0';
 }
 
 function removeLogo() {
@@ -345,22 +385,31 @@ function removeLogo() {
   document.getElementById('logoInput').value = '';
   const bizName = document.getElementById('bizName').value || 'My Business';
   const logoDiv = document.getElementById('receiptLogo');
-  logoDiv.innerHTML = bizName.charAt(0).toUpperCase(); logoDiv.style.background = '#fff';
-  saveData(); showToast('Logo removed.');
+  logoDiv.innerHTML = bizName.charAt(0).toUpperCase();
+  logoDiv.style.background = '#fff';
+  saveData();
+  showToast('Logo removed.');
 }
 
+// --- Export ---
 async function downloadReceipt() {
   const receipt = document.getElementById('receiptCard');
   const btn = document.getElementById('downloadBtn');
   btn.textContent = 'Generating...';
+  
   try {
     if (document.fonts && document.fonts.ready) await document.fonts.ready;
     const canvas = await html2canvas(receipt, { scale: 2, backgroundColor: '#ffffff', useCORS: true });
     const link = document.createElement('a');
     link.download = `VendSlip-${currentRef}.png`;
     link.href = canvas.toDataURL('image/png');
-    link.click(); showToast('Receipt saved to gallery!');
-  } catch (err) { showToast('Error generating image.'); } finally { btn.textContent = 'Download HD'; }
+    link.click();
+    showToast('Receipt saved to gallery!');
+  } catch (err) {
+    showToast('Error generating image.');
+  } finally {
+    btn.textContent = 'Download HD Receipt';
+  }
 }
 
 async function shareWhatsApp() {
@@ -375,31 +424,71 @@ async function shareWhatsApp() {
       } else {
         const link = document.createElement('a');
         link.download = `VendSlip-${currentRef}.png`;
-        link.href = URL.createObjectURL(blob); link.click();
-        showToast('Sharing not supported. Image downloaded instead.');
+        link.href = URL.createObjectURL(blob);
+        link.click();
+        showToast('Sharing not supported. Image downloaded.');
       }
     }, 'image/png');
-  } catch (err) { showToast('Error generating image.'); }
+  } catch (err) {
+    showToast('Error generating image.');
+  }
 }
 
+// --- Toast & Utilities ---
 function showToast(msg) {
-  const t = document.getElementById('toast'); t.textContent = msg;
-  t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 3000);
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
 }
 
-function setupScrollAnimations() {
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach(entry => { if (entry.isIntersecting) entry.target.classList.add('active'); });
-  }, { threshold: 0.1 });
-  document.querySelectorAll('.reveal-on-scroll').forEach((el) => observer.observe(el));
+// --- 3D Tilt Logic ---
+function init3DTilt() {
+  const card = document.getElementById('receiptCard');
+  
+  // Desktop Tilt
+  card.addEventListener('mousemove', (e) => {
+    const rect = card.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const centerX = rect.width / 2;
+    const centerY = rect.height / 2;
+    
+    const rotateX = ((y - centerY) / centerY) * -10; // Max 10 deg
+    const rotateY = ((x - centerX) / centerX) * 10;
+    
+    card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02, 1.02, 1.02)`;
+  });
+  
+  card.addEventListener('mouseleave', () => {
+    card.style.transform = `perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)`;
+    card.style.transition = 'transform 0.5s cubic-bezier(0.16, 1, 0.3, 1)';
+    setTimeout(() => { card.style.transition = 'transform 0.1s ease-out'; }, 500);
+  });
+
+  // Mobile Gyroscope
+  if (window.DeviceOrientationEvent) {
+    window.addEventListener('deviceorientation', (event) => {
+      const beta = event.beta; // -180 to 180 (front to back)
+      const gamma = event.gamma; // -90 to 90 (left to right)
+      
+      if (beta === null || gamma === null) return;
+      
+      // Clamp and scale values for a subtle tilt
+      const rotateX = Math.max(-10, Math.min(10, (beta - 45) * 0.2)); // 45 is roughly holding phone
+      const rotateY = Math.max(-10, Math.min(10, gamma * 0.2));
+      
+      card.style.transform = `perspective(1000px) rotateX(${-rotateX}deg) rotateY(${rotateY}deg)`;
+    });
+  }
 }
 
+// --- Tour Logic ---
 const tourSteps = [
   { title: "Welcome to VendSlip", text: "The fastest way to create professional receipts for WhatsApp and IG vendors. No sign-up required." },
   { title: "Real-Time Generation", text: "Type your details. The receipt updates instantly. Select 'Paid' to auto-calculate, or 'Part Paid' to collect a balance." },
   { title: "One-Tap Sharing", text: "Tap 'Share to WhatsApp' to send a high-res image. Upgrade to Pro to remove the watermark and add your logo." }
 ];
-
 let currentTourStep = 0;
 
 document.getElementById('tourNextBtn').addEventListener('click', () => {
@@ -408,11 +497,15 @@ document.getElementById('tourNextBtn').addEventListener('click', () => {
     document.getElementById('tourTitle').textContent = tourSteps[currentTourStep].title;
     document.getElementById('tourText').textContent = tourSteps[currentTourStep].text;
     document.querySelectorAll('.tour-dot').forEach((dot, index) => {
-      if (index === currentTourStep) dot.classList.add('active'); else dot.classList.remove('active');
+      if (index === currentTourStep) dot.classList.add('active');
+      else dot.classList.remove('active');
     });
-    if (currentTourStep === tourSteps.length - 1) document.getElementById('tourNextBtn').textContent = 'Start Using VendSlip';
+    if (currentTourStep === tourSteps.length - 1) {
+      document.getElementById('tourNextBtn').textContent = 'Start Using VendSlip';
+    }
   } else {
     document.getElementById('tourSheet').classList.remove('active');
-    localStorage.setItem('vendslip_tour_seen', 'true'); showToast('You are ready to go!');
+    localStorage.setItem('vendslip_tour_seen', 'true');
+    showToast('You are ready to go!');
   }
 });
