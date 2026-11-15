@@ -92,7 +92,11 @@ function generateRef() {
 
 function activatePro() {
   isPro = true;
-  document.getElementById('receiptWatermark').classList.add('hidden');
+  
+  // Change Watermark to Verified Merchant Badge
+  const watermark = document.getElementById('receiptWatermark');
+  watermark.innerHTML = '<span style="color: #10B981; font-size: 0.75rem; font-weight: 800; letter-spacing: 0.05em;">&#10004; VERIFIED MERCHANT</span>';
+  
   const badge = document.getElementById('headerBadge');
   badge.textContent = 'PRO';
   badge.style.background = 'linear-gradient(135deg, #10B981 0%, #4F46E5 100%)';
@@ -454,7 +458,7 @@ function init3DTilt() {
     const centerX = rect.width / 2;
     const centerY = rect.height / 2;
     
-    const rotateX = ((y - centerY) / centerY) * -10; // Max 10 deg
+    const rotateX = ((y - centerY) / centerY) * -10;
     const rotateY = ((x - centerX) / centerX) * 10;
     
     card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02, 1.02, 1.02)`;
@@ -469,13 +473,12 @@ function init3DTilt() {
   // Mobile Gyroscope
   if (window.DeviceOrientationEvent) {
     window.addEventListener('deviceorientation', (event) => {
-      const beta = event.beta; // -180 to 180 (front to back)
-      const gamma = event.gamma; // -90 to 90 (left to right)
+      const beta = event.beta;
+      const gamma = event.gamma;
       
       if (beta === null || gamma === null) return;
       
-      // Clamp and scale values for a subtle tilt
-      const rotateX = Math.max(-10, Math.min(10, (beta - 45) * 0.2)); // 45 is roughly holding phone
+      const rotateX = Math.max(-10, Math.min(10, (beta - 45) * 0.2));
       const rotateY = Math.max(-10, Math.min(10, gamma * 0.2));
       
       card.style.transform = `perspective(1000px) rotateX(${-rotateX}deg) rotateY(${rotateY}deg)`;
