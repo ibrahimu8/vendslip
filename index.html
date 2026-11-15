@@ -5,17 +5,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>VendSlip | Instant Receipts</title>
   <link rel="stylesheet" href="style.css">
-  <!-- Libraries -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 <body>
+
+  <!-- Animated Mesh Background -->
+  <div class="mesh-bg"></div>
 
   <header>
     <div class="brand">
       <div class="logo-3d">V</div>
       VendSlip
-      <span class="pro-badge" id="headerBadge" style="background: var(--border); color: var(--text-muted);">BETA</span>
+      <span class="pro-badge" id="headerBadge">BETA</span>
     </div>
     <div class="header-actions">
       <button id="themeToggle" class="icon-btn" aria-label="Toggle Theme">
@@ -27,7 +28,6 @@
   </header>
 
   <main class="app-container">
-    
     <div class="header-tagline reveal-on-scroll">
       <p>Instant verified receipts for social & WhatsApp vendors. No sign-up required.</p>
     </div>
@@ -38,7 +38,6 @@
     </div>
 
     <div class="edit-col" id="editCol">
-      <!-- BUSINESS DETAILS -->
       <div class="card reveal-on-scroll">
         <div class="section-title">Business Details</div>
         <div class="input-group">
@@ -67,11 +66,9 @@
         </div>
       </div>
 
-      <!-- ITEMS -->
       <div class="card reveal-on-scroll">
         <div class="section-title">Items</div>
         <div id="itemsContainer">
-          <!-- Item Row Template -->
           <div class="item-row">
             <div class="item-header">
               <label>Item Description</label>
@@ -101,7 +98,6 @@
         <button class="btn-outline btn-dashed mt-16" onclick="addItem()">+ Add Another Item</button>
       </div>
 
-      <!-- PAYMENT STATUS -->
       <div class="card reveal-on-scroll">
         <div class="section-title">Payment Status</div>
         <div class="status-grid" id="statusGrid">
@@ -141,11 +137,9 @@
       </div>
     </div>
 
-    <!-- PREVIEW COLUMN -->
     <div class="preview-col" id="previewCol" style="display: none;">
       <div class="receipt-container">
-        <!-- 3D Tilt Card -->
-        <div class="receipt-card" id="receiptCard" onmousemove="tiltCard(event)" onmouseleave="resetTilt()">
+        <div class="receipt-card" id="receiptCard">
           
           <div class="receipt-header-banner" id="receiptBanner">
             <div class="biz-logo" id="receiptLogo">M</div>
@@ -200,13 +194,11 @@
           <div class="receipt-zigzag"></div>
           
           <div class="receipt-watermark" id="receiptWatermark">
-            <div id="qrcode"></div>
-            <span class="watermark-text">Verified via VendSlip.com</span>
+            <span class="watermark-text">Verified via Vendslip.com.ng</span>
           </div>
         </div>
       </div>
 
-      <!-- THEMES -->
       <div class="card reveal-on-scroll theme-card">
         <label class="theme-label">Receipt Theme</label>
         <div class="currency-wrap" id="themeWrap">
@@ -223,22 +215,19 @@
         <button class="btn-primary btn-whatsapp" onclick="shareWhatsApp()">WhatsApp</button>
       </div>
     </div>
-
   </main>
 
-  <!-- MODALS & OVERLAYS -->
   <div class="modal-overlay" id="proModal">
     <div class="modal-content reveal-on-scroll">
       <h2 class="modal-title">Upgrade to Pro</h2>
       <p class="modal-desc">Stand out with premium features for serious vendors.</p>
-      
       <ul class="pro-features">
         <li>✓ Remove VendSlip Watermark</li>
         <li>✓ Upload Your Business Logo</li>
         <li>✓ Luxury Gold Theme</li>
       </ul>
-
-      <a href="https://paystack.shop/pay/30uz0wj30l" class="btn-primary" style="display: block; text-align: center; text-decoration: none; margin-bottom: 12px;">Upgrade Now — ₦2,000</a>
+      <!-- REAL PAYSTACK LINK GOES HERE WITH A SECRET SIGNATURE -->
+      <a href="https://paystack.shop/pay/30uz0wj30l?return_url=https://vendslip.com.ng?sig=VendSlipSecret99" class="btn-primary" style="display: block; text-align: center; text-decoration: none; margin-bottom: 12px;">Upgrade Now — ₦2,000</a>
       <button class="btn-outline btn-block" onclick="closeProModal()">Maybe Later</button>
     </div>
   </div>
