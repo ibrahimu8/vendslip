@@ -151,7 +151,7 @@
     /* --- APPLICATION WORKSPACE --- */
     #app-workspace {
       display: none; background: var(--bg); color: var(--text-main); min-height: 100vh;
-      animation: fadeIn 0.8s var(--spring); padding-bottom: 100px; /* Space for floating button */
+      animation: fadeIn 0.8s var(--spring); padding-bottom: 100px;
     }
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
@@ -242,24 +242,10 @@
 
     /* --- FLOATING MOBILE BUTTON --- */
     .mobile-preview-btn {
-      display: none; 
-      position: fixed; 
-      bottom: 24px; 
-      left: 50%; 
-      transform: translateX(-50%);
-      background: var(--primary); 
-      color: #fff; 
-      padding: 14px 24px; 
-      border-radius: 30px;
-      font-weight: 800; 
-      font-size: 0.9rem; 
-      box-shadow: 0 10px 20px rgba(16, 185, 129, 0.4), 0 0 0 4px var(--bg);
-      z-index: 9999; /* Highest priority */
-      border: none; 
-      cursor: pointer; 
-      align-items: center; 
-      gap: 8px;
-      transition: transform 0.2s;
+      display: none; position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+      background: var(--primary); color: #fff; padding: 14px 24px; border-radius: 30px;
+      font-weight: 800; font-size: 0.9rem; box-shadow: 0 10px 20px rgba(16, 185, 129, 0.4), 0 0 0 4px var(--bg);
+      z-index: 9999; border: none; cursor: pointer; align-items: center; gap: 8px; transition: transform 0.2s;
     }
     .mobile-preview-btn:active { transform: translateX(-50%) scale(0.95); }
     @media(max-width: 899px) { .mobile-preview-btn { display: flex; } }
@@ -408,6 +394,23 @@
               <input type="number" id="deliveryFee" value="2000" oninput="updatePreview()">
             </div>
           </div>
+          
+          <!-- SELLER BANK DETAILS -->
+          <div class="section-title" style="margin-top: 24px;">Seller Bank Details</div>
+          <div class="form-group">
+            <label>Bank Name</label>
+            <input type="text" id="bankName" placeholder="e.g. GTBank" value="GTBank" oninput="updatePreview()">
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Account Number</label>
+              <input type="text" id="accNumber" placeholder="0123456789" value="0123456789" oninput="updatePreview()">
+            </div>
+            <div class="form-group">
+              <label>Account Name</label>
+              <input type="text" id="accName" placeholder="Ada Okafor" value="Ada Okafor" oninput="updatePreview()">
+            </div>
+          </div>
         </div>
 
         <div class="card">
@@ -464,10 +467,12 @@
               </div>
             </div>
 
+            <!-- BANK DETAILS ON RECEIPT -->
             <div class="receipt-payment" id="receiptPaymentBox">
-              <h4>Payment Information</h4>
-              <p><strong>Method:</strong> <span id="previewMethod">Bank Transfer</span></p>
-              <p id="previewBankDetails">Bank details will appear here.</p>
+              <h4>Pay To (Seller)</h4>
+              <p><strong id="rBankName">GTBank</strong></p>
+              <p>Acct No: <strong id="rAccNumber">0123456789</strong></p>
+              <p>Acct Name: <strong id="rAccName">Ada Okafor</strong></p>
             </div>
             
             <div class="receipt-footer">

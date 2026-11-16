@@ -31,7 +31,6 @@ function resetApp() {
   updatePreview();
 }
 
-// Perfect scroll function
 function scrollToPreview() {
   const panel = document.getElementById('preview-panel');
   const y = panel.getBoundingClientRect().top + window.scrollY - 80;
@@ -122,6 +121,11 @@ function updatePreview() {
   const buyerName = document.getElementById('buyerName').value || 'Customer';
   const deliveryFee = parseFloat(document.getElementById('deliveryFee').value) || 0;
   const status = document.getElementById('status').value;
+  
+  // Seller Bank Details
+  const bankName = document.getElementById('bankName').value || '-';
+  const accNumber = document.getElementById('accNumber').value || '-';
+  const accName = document.getElementById('accName').value || '-';
 
   document.getElementById('previewBizName').textContent = bizName;
   document.getElementById('previewBuyer').textContent = buyerName;
@@ -138,8 +142,16 @@ function updatePreview() {
   stamp.offsetHeight;
   stamp.style.animation = null;
 
+  // Hide bank details if PAID
   const payBox = document.getElementById('receiptPaymentBox');
-  payBox.style.display = (status === 'PAID') ? 'none' : 'block';
+  if (status === 'PAID') {
+    payBox.style.display = 'none';
+  } else {
+    payBox.style.display = 'block';
+    document.getElementById('rBankName').textContent = bankName;
+    document.getElementById('rAccNumber').textContent = accNumber;
+    document.getElementById('rAccName').textContent = accName;
+  }
 
   let subtotal = 0;
   const tbody = document.getElementById('previewItems');
