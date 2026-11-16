@@ -19,7 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   loadSavedData();
   generateRef();
-  addItem(); // Start with one item row
+  addItem(); 
 
   // Paystack Secure Redirect
   const urlParams = new URLSearchParams(window.location.search);
@@ -71,12 +71,12 @@ document.addEventListener('DOMContentLoaded', () => {
   updatePreview();
   init3DTilt();
 
-  // Onboarding Tour (Triggers 1s after load)
+  // Onboarding Tour
   const hasSeenTour = localStorage.getItem('vendslip_tour_seen');
   if (!hasSeenTour) {
     setTimeout(() => {
       document.getElementById('tourSheet').classList.add('active');
-    }, 1000);
+    }, 1200); // Slightly delayed for the entry animations to finish
   }
 });
 
@@ -92,8 +92,6 @@ function generateRef() {
 
 function activatePro() {
   isPro = true;
-  
-  // Change Watermark to Verified Merchant Badge
   const watermark = document.getElementById('receiptWatermark');
   watermark.innerHTML = '<span style="color: #10B981; font-size: 0.75rem; font-weight: 800; letter-spacing: 0.05em;">&#10004; VERIFIED MERCHANT</span>';
   
@@ -120,9 +118,7 @@ function loadSavedData() {
       });
     }
 
-    if (saved.isPro) {
-      activatePro();
-    }
+    if (saved.isPro) activatePro();
 
     if (saved.logo) {
       savedLogoBase64 = saved.logo;
@@ -162,6 +158,13 @@ function switchTab(tab) {
     previewCol.style.display = 'block';
     btnPrev.classList.add('active');
     btnEdit.classList.remove('active');
+    
+    // Re-trigger receipt animation
+    const receipt = document.getElementById('receiptCard');
+    receipt.style.animation = 'none';
+    receipt.offsetHeight; 
+    receipt.style.animation = null; 
+    
     updatePreview();
   }
 }
@@ -309,7 +312,6 @@ function updatePreview() {
     stamp.textContent = 'PAID';
   }
   
-  // Re-trigger stamp animation
   stamp.style.animation = 'none';
   stamp.offsetHeight; 
   stamp.style.animation = null; 
@@ -395,7 +397,7 @@ function removeLogo() {
   showToast('Logo removed.');
 }
 
-// --- Export ---
+// --- Export & Share (With Export Freeze) ---
 async function downloadReceipt() {
   const receipt = document.getElementById('receiptCard');
   const btn = document.getElementById('downloadBtn');
@@ -403,13 +405,22 @@ async function downloadReceipt() {
   
   try {
     if (document.fonts && document.fonts.ready) await document.fonts.ready;
+    
+    // FREEZE ANIMATIONS AND 3D TILT FOR EXPORT
+    receipt.classList.add('exporting');
+    
     const canvas = await html2canvas(receipt, { scale: 2, backgroundColor: '#ffffff', useCORS: true });
+    
+    // RESTORE ANIMATIONS
+    receipt.classList.remove('exporting');
+    
     const link = document.createElement('a');
     link.download = `VendSlip-${currentRef}.png`;
     link.href = canvas.toDataURL('image/png');
     link.click();
     showToast('Receipt saved to gallery!');
   } catch (err) {
+    document.getElementById('receiptCard').classList.remove('exporting');
     showToast('Error generating image.');
   } finally {
     btn.textContent = 'Download HD Receipt';
@@ -420,7 +431,15 @@ async function shareWhatsApp() {
   const receipt = document.getElementById('receiptCard');
   try {
     if (document.fonts && document.fonts.ready) await document.fonts.ready;
+    
+    // FREEZE ANIMATIONS AND 3D TILT FOR EXPORT
+    receipt.classList.add('exporting');
+    
     const canvas = await html2canvas(receipt, { scale: 2, backgroundColor: '#ffffff', useCORS: true });
+    
+    // RESTORE ANIMATIONS
+    receipt.classList.remove('exporting');
+    
     canvas.toBlob(async (blob) => {
       const file = new File([blob], `VendSlip-${currentRef}.png`, { type: 'image/png' });
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
@@ -434,6 +453,7 @@ async function shareWhatsApp() {
       }
     }, 'image/png');
   } catch (err) {
+    document.getElementById('receiptCard').classList.remove('exporting');
     showToast('Error generating image.');
   }
 }
@@ -452,34 +472,38 @@ function init3DTilt() {
   
   // Desktop Tilt
   card.addEventListener('mousemove', (e) => {
+    if (card.classList.contains('exporting')) return; // Don't tilt during export
+    
     const rect = card.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
     const centerX = rect.width / 2;
     const centerY = rect.height / 2;
     
-    const rotateX = ((y - centerY) / centerY) * -10;
-    const rotateY = ((x - centerX) / centerX) * 10;
+    const rotateX = ((y - centerY) / centerY) * -8; // Slightly reduced tilt for elegance
+    const rotateY = ((x - centerX) / centerX) * 8;
     
     card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02, 1.02, 1.02)`;
   });
   
   card.addEventListener('mouseleave', () => {
     card.style.transform = `perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)`;
-    card.style.transition = 'transform 0.5s cubic-bezier(0.16, 1, 0.3, 1)';
-    setTimeout(() => { card.style.transition = 'transform 0.1s ease-out'; }, 500);
+    card.style.transition = 'transform 0.6s cubic-bezier(0.16, 1, 0.3, 1)';
+    setTimeout(() => { card.style.transition = 'transform 0.1s ease-out'; }, 600);
   });
 
   // Mobile Gyroscope
   if (window.DeviceOrientationEvent) {
     window.addEventListener('deviceorientation', (event) => {
+      if (card.classList.contains('exporting')) return; // Don't tilt during export
+      
       const beta = event.beta;
       const gamma = event.gamma;
       
       if (beta === null || gamma === null) return;
       
-      const rotateX = Math.max(-10, Math.min(10, (beta - 45) * 0.2));
-      const rotateY = Math.max(-10, Math.min(10, gamma * 0.2));
+      const rotateX = Math.max(-8, Math.min(8, (beta - 45) * 0.15));
+      const rotateY = Math.max(-8, Math.min(8, gamma * 0.15));
       
       card.style.transform = `perspective(1000px) rotateX(${-rotateX}deg) rotateY(${rotateY}deg)`;
     });
@@ -534,14 +558,12 @@ function parseWhatsAppText() {
     let price = 0;
     let name = line;
 
-    // Detect Quantity
     const qtyMatch = line.match(/^(\d+)\s*(?:x|pcs|piece|pieces)\s*/i);
     if (qtyMatch) {
       qty = parseInt(qtyMatch[1]);
       name = line.replace(qtyMatch[0], '').trim();
     }
 
-    // Detect Price
     const priceMatch = name.match(/[-=₦N]?\s*(\d+(?:,\d{3})*(?:\.\d+)?)\s*(k)?$/i);
     
     if (priceMatch) {

@@ -27,6 +27,10 @@
       --font-sans: 'Inter', sans-serif;
       --font-mono: 'JetBrains Mono', monospace;
       --red: #E11D48;
+      
+      /* Motion Tokens */
+      --spring: cubic-bezier(0.16, 1, 0.3, 1);
+      --smooth: cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     [data-theme="dark"] {
@@ -46,22 +50,25 @@
       font-family: var(--font-sans);
       background-color: var(--bg);
       color: var(--text-main);
-      transition: background-color 0.3s, color 0.3s;
+      transition: background-color 0.4s var(--smooth), color 0.4s var(--smooth);
       line-height: 1.5;
       -webkit-font-smoothing: antialiased;
       overflow-x: hidden;
+      /* Refined Animated Background */
       background-image: 
-        radial-gradient(at 0% 0%, rgba(16, 185, 129, 0.15) 0px, transparent 50%),
-        radial-gradient(at 100% 100%, rgba(79, 70, 229, 0.15) 0px, transparent 50%);
+        radial-gradient(at 0% 0%, rgba(16, 185, 129, 0.12) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, rgba(79, 70, 229, 0.12) 0px, transparent 50%);
+      background-size: 150% 150%;
       background-attachment: fixed;
-      animation: bgPulse 10s infinite alternate;
+      animation: bgDrift 15s ease-in-out infinite alternate;
     }
 
-    @keyframes bgPulse {
-      0% { background-size: 100% 100%; }
-      100% { background-size: 150% 150%; }
+    @keyframes bgDrift {
+      0% { background-position: 0% 0%; }
+      100% { background-position: 100% 100%; }
     }
 
+    /* --- Header --- */
     header {
       position: sticky;
       top: 0;
@@ -74,6 +81,7 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
+      transition: border-color 0.4s;
     }
 
     .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 1.2rem; letter-spacing: -0.03em; }
@@ -86,14 +94,16 @@
       color: #fff; font-weight: 800; font-size: 1.1rem;
       box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3), inset 0 2px 4px rgba(255,255,255,0.4);
       text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+      transition: transform 0.3s var(--spring);
     }
+    .brand:hover .logo-3d { transform: scale(1.05) rotate(-5deg); }
 
     .pro-badge {
       font-size: 0.65rem; font-weight: 800;
       padding: 2px 6px; border-radius: 4px;
       letter-spacing: 0.05em;
       background: var(--border); color: var(--text-muted);
-      transition: all 0.3s;
+      transition: all 0.3s var(--spring);
     }
 
     .header-actions { display: flex; align-items: center; gap: 10px; }
@@ -102,18 +112,21 @@
       background: transparent; border: 1px solid var(--border);
       color: var(--text-main); width: 36px; height: 36px;
       border-radius: 10px; display: grid; place-items: center;
-      cursor: pointer; transition: all 0.2s;
+      cursor: pointer; transition: all 0.2s var(--spring);
     }
-    .icon-btn:hover { background: var(--surface-hover); }
+    .icon-btn:hover { background: var(--surface-hover); transform: translateY(-1px); }
+    .icon-btn:active { transform: scale(0.95); }
 
     .btn-outline {
       padding: 8px 14px; background: transparent;
       border: 1px solid var(--border); color: var(--text-main);
       border-radius: 10px; font-weight: 600; font-size: 0.9rem;
-      cursor: pointer; transition: all 0.2s;
+      cursor: pointer; transition: all 0.2s var(--spring);
     }
-    .btn-outline:hover { background: var(--surface-hover); }
+    .btn-outline:hover { background: var(--surface-hover); border-color: var(--text-muted); }
+    .btn-outline:active { transform: scale(0.97); }
 
+    /* --- Layout --- */
     .app-container {
       max-width: 1100px; margin: 0 auto; padding: 16px;
       display: flex; flex-direction: column; gap: 24px;
@@ -125,6 +138,7 @@
       .preview-col { flex: 1; position: sticky; top: 80px; }
     }
 
+    /* --- Mobile Tabs --- */
     .mobile-tabs {
       display: flex; background: var(--surface);
       border: 1px solid var(--border); border-radius: 14px;
@@ -134,28 +148,32 @@
     .mobile-tabs button {
       flex: 1; padding: 12px; border: none; background: transparent;
       color: var(--text-muted); font-weight: 600; border-radius: 10px;
-      cursor: pointer; transition: all 0.2s; font-size: 0.9rem;
+      cursor: pointer; transition: all 0.3s var(--spring); font-size: 0.9rem;
     }
     .mobile-tabs button.active {
       background: var(--surface-hover); color: var(--text-main);
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1); transform: scale(1.02);
     }
     @media (min-width: 900px) { .mobile-tabs { display: none; } }
 
+    /* --- Cards & Animations --- */
     .card {
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: 20px; padding: 24px; margin-bottom: 16px;
       box-shadow: 0 8px 20px -6px rgba(0, 0, 0, 0.08);
-      animation: slideUpFade 0.6s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+      animation: slideUpFade 0.7s var(--spring) backwards;
+      transition: border-color 0.3s, box-shadow 0.3s;
     }
-    .card:nth-child(1) { animation-delay: 0.1s; }
-    .card:nth-child(2) { animation-delay: 0.2s; }
-    .card:nth-child(3) { animation-delay: 0.3s; }
+    .card:nth-child(1) { animation-delay: 0.05s; }
+    .card:nth-child(2) { animation-delay: 0.15s; }
+    .card:nth-child(3) { animation-delay: 0.25s; }
+    
+    .card:hover { border-color: rgba(16, 185, 129, 0.3); }
 
     @keyframes slideUpFade {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
+      from { opacity: 0; transform: translateY(24px) scale(0.98); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
     }
 
     .section-title {
@@ -173,61 +191,78 @@
       width: 100%; padding: 14px; background: var(--bg);
       border: 1px solid var(--border); border-radius: 12px;
       color: var(--text-main); font-family: var(--font-sans);
-      font-size: 1rem; transition: all 0.2s;
+      font-size: 1rem; transition: all 0.25s var(--smooth);
     }
-    input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px var(--ring); }
+    input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px var(--ring); transform: translateY(-1px); }
 
+    /* --- Currency & Status --- */
     .currency-wrap { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
     .currency-btn {
       padding: 8px 14px; border-radius: 8px; border: 1px solid var(--border);
       background: var(--surface); color: var(--text-muted);
-      font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all 0.2s;
+      font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all 0.2s var(--spring);
     }
+    .currency-btn:hover { transform: translateY(-1px); background: var(--surface-hover); }
+    .currency-btn:active { transform: scale(0.95); }
     .currency-btn.active { border-color: var(--primary); color: var(--primary); background: var(--ring); }
 
     .status-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 20px; }
     .status-btn {
       padding: 14px 8px; border-radius: 12px; border: 1px solid var(--border);
       background: var(--surface); color: var(--text-muted);
-      font-weight: 700; font-size: 0.75rem; cursor: pointer; transition: all 0.2s;
+      font-weight: 700; font-size: 0.75rem; cursor: pointer; transition: all 0.2s var(--spring);
       text-align: center; letter-spacing: 0.02em;
     }
-    .status-btn[data-status="Paid"].active { background: #DCFCE7; border-color: #10B981; color: #065F46; }
-    .status-btn[data-status="Part Payment"].active { background: #FEF3C7; border-color: #F59E0B; color: #92400E; }
-    .status-btn[data-status="Pay on Delivery"].active { background: #E0F2FE; border-color: #0EA5E9; color: #075985; }
+    .status-btn:hover { background: var(--surface-hover); }
+    .status-btn:active { transform: scale(0.96); }
+    
+    .status-btn[data-status="Paid"].active { background: #DCFCE7; border-color: #10B981; color: #065F46; box-shadow: 0 4px 10px rgba(16, 185, 129, 0.2); }
+    .status-btn[data-status="Part Payment"].active { background: #FEF3C7; border-color: #F59E0B; color: #92400E; box-shadow: 0 4px 10px rgba(245, 158, 11, 0.2); }
+    .status-btn[data-status="Pay on Delivery"].active { background: #E0F2FE; border-color: #0EA5E9; color: #075985; box-shadow: 0 4px 10px rgba(14, 165, 233, 0.2); }
 
     [data-theme="dark"] .status-btn[data-status="Paid"].active { background: rgba(16, 185, 129, 0.15); color: #34D399; }
     [data-theme="dark"] .status-btn[data-status="Part Payment"].active { background: rgba(245, 158, 11, 0.15); color: #FBBF24; }
     [data-theme="dark"] .status-btn[data-status="Pay on Delivery"].active { background: rgba(14, 165, 233, 0.15); color: #38BDF8; }
 
+    /* --- Dynamic Items --- */
     .item-row {
       background: var(--bg); padding: 16px; border-radius: 14px;
       border: 1px solid var(--border); margin-bottom: 12px;
-      position: relative; animation: fadeIn 0.3s ease-out;
+      position: relative; animation: fadeIn 0.4s var(--spring);
     }
+    @keyframes fadeIn { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
+
     .remove-item-btn {
       position: absolute; top: -8px; right: -8px;
       width: 24px; height: 24px; border-radius: 50%;
       background: var(--red); color: #fff; border: 2px solid var(--surface);
       font-size: 12px; display: grid; place-items: center;
       cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+      transition: transform 0.2s var(--spring);
     }
+    .remove-item-btn:hover { transform: scale(1.1) rotate(90deg); }
+
     .quick-price-btns { display: flex; gap: 6px; margin-top: 8px; }
     .quick-price-btn {
       padding: 4px 8px; font-size: 0.7rem; font-weight: 600;
       background: var(--surface-hover); border: 1px solid var(--border);
       color: var(--text-muted); border-radius: 6px; cursor: pointer;
+      transition: all 0.2s var(--spring);
     }
-    .quick-price-btn:hover { background: var(--border); }
+    .quick-price-btn:hover { background: var(--border); transform: translateY(-1px); }
+    .quick-price-btn:active { transform: scale(0.9); }
 
+    /* --- Buttons --- */
     .btn-primary {
       width: 100%; padding: 16px; background: var(--primary); color: #fff;
       border: none; border-radius: 12px; font-weight: 700; font-size: 1rem;
-      cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+      cursor: pointer; transition: all 0.25s var(--spring);
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
     }
-    .btn-primary:hover { background: var(--primary-hover); transform: translateY(-1px); }
-    .btn-primary:active { transform: translateY(1px); }
+    .btn-primary:hover { background: var(--primary-hover); transform: translateY(-2px); box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4); }
+    .btn-primary:active { transform: translateY(1px) scale(0.98); box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3); }
 
+    /* --- Premium Receipt & 3D Tilt --- */
     .receipt-container { perspective: 1200px; width: 100%; display: flex; justify-content: center; }
     
     .receipt-card {
@@ -237,6 +272,13 @@
       position: relative; margin-bottom: 24px;
       transform-style: preserve-3d;
       transition: transform 0.1s ease-out;
+      /* Unfold Animation */
+      animation: unfoldReceipt 0.8s var(--spring) backwards;
+    }
+
+    @keyframes unfoldReceipt {
+      0% { opacity: 0; transform: perspective(1000px) rotateX(-10deg) scale(0.95); filter: blur(4px); }
+      100% { opacity: 1; transform: perspective(1000px) rotateX(0deg) scale(1); filter: blur(0); }
     }
 
     .receipt-header-banner {
@@ -263,12 +305,12 @@
       color: var(--red); border: 2px solid var(--red);
       padding: 4px 12px; border-radius: 6px; transform: rotate(-15deg);
       pointer-events: none; opacity: 0.85; backdrop-filter: blur(2px);
-      animation: stampSlam 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+      animation: stampSlam 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
       transform: translateZ(30px) rotate(-15deg);
     }
 
     @keyframes stampSlam {
-      0% { opacity: 0; transform: scale(2) rotate(-30deg) translateZ(30px); filter: blur(4px); }
+      0% { opacity: 0; transform: scale(2.5) rotate(-30deg) translateZ(30px); filter: blur(8px); }
       100% { opacity: 0.85; transform: scale(1) rotate(-15deg) translateZ(30px); filter: blur(0); }
     }
 
@@ -299,25 +341,27 @@
       letter-spacing: 0.05em; font-weight: 600;
     }
 
+    /* --- Modal & Tour --- */
     .modal-overlay {
-      position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px);
+      position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(8px);
       display: flex; align-items: center; justify-content: center; z-index: 100; padding: 16px;
-      opacity: 0; pointer-events: none; transition: opacity 0.3s;
+      opacity: 0; pointer-events: none; transition: opacity 0.3s var(--smooth);
     }
     .modal-overlay.active { opacity: 1; pointer-events: all; }
     .modal-content {
       background: var(--surface); border: 1px solid var(--border);
       border-radius: 24px; padding: 32px; max-width: 400px; width: 100%;
-      transform: translateY(20px); transition: transform 0.3s;
+      transform: translateY(20px) scale(0.95); transition: transform 0.4s var(--spring);
+      box-shadow: 0 20px 40px -10px rgba(0,0,0,0.3);
     }
-    .modal-overlay.active .modal-content { transform: translateY(0); }
+    .modal-overlay.active .modal-content { transform: translateY(0) scale(1); }
 
     .tour-bottom-sheet {
       position: fixed; bottom: -100%; left: 0; right: 0;
       background: var(--surface); border-top: 1px solid var(--border);
       border-radius: 24px 24px 0 0; padding: 24px; z-index: 1000;
       box-shadow: 0 -10px 40px rgba(0,0,0,0.3);
-      transition: bottom 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      transition: bottom 0.5s var(--spring);
     }
     .tour-bottom-sheet.active { bottom: 0; }
     .tour-content { max-width: 500px; margin: 0 auto; }
@@ -327,17 +371,30 @@
     .tour-dots { display: flex; gap: 6px; }
     .tour-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); transition: background 0.3s; }
     .tour-dot.active { background: var(--primary); }
-    .tour-btn { background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 0.9rem; }
+    .tour-btn { background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 0.9rem; transition: transform 0.2s var(--spring); }
+    .tour-btn:active { transform: scale(0.95); }
 
     .toast {
-      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(100px);
+      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(100px) scale(0.9);
       background: var(--text-main); color: var(--bg); padding: 12px 24px; border-radius: 30px;
-      font-size: 0.85rem; font-weight: 600; opacity: 0; transition: all 0.3s; z-index: 1000;
+      font-size: 0.85rem; font-weight: 600; opacity: 0; transition: all 0.4s var(--spring); z-index: 1000;
       box-shadow: 0 10px 30px rgba(0,0,0,0.2); pointer-events: none;
     }
-    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
 
     .hidden { display: none !important; }
+    
+    /* UTILITY: Export Freeze */
+    .exporting .receipt-card {
+      transform: none !important;
+      animation: none !important;
+      box-shadow: none !important;
+    }
+    .exporting .stamp {
+      animation: none !important;
+      transform: rotate(-15deg) !important;
+      opacity: 0.85 !important;
+    }
   </style>
 </head>
 <body>
@@ -403,7 +460,6 @@
         <div class="section-title">Items</div>
         <div id="itemsContainer"></div>
         
-        <!-- Paste from WhatsApp Button -->
         <button class="btn-outline" style="width: 100%; padding: 12px; margin-bottom: 8px; display: flex; align-items: center; justify-content: center; gap: 8px;" onclick="document.getElementById('pasteModal').classList.add('active')">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>
           Paste from WhatsApp
@@ -547,13 +603,13 @@
     </div>
   </div>
 
-  <!-- Paste from WhatsApp Modal -->
+  <!-- Paste Modal -->
   <div class="modal-overlay" id="pasteModal">
     <div class="modal-content">
       <h2 style="font-size: 1.3rem; margin-bottom: 8px; font-weight: 800;">Paste Order Details</h2>
       <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 16px;">Paste the text from your WhatsApp chat. We'll automatically detect the items and prices.</p>
       
-      <textarea id="whatsappText" placeholder="Example:&#10;2x Denim Jacket - 15000&#10;Wrapper 5000&#10;1 x Gold Chain = 12k" style="width: 100%; height: 120px; padding: 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg); color: var(--text-main); font-family: var(--font-sans); margin-bottom: 16px; resize: none;"></textarea>
+      <textarea id="whatsappText" placeholder="Example:&#10;2x Denim Jacket - 15000&#10;Wrapper 5000&#10;1 x Gold Chain = 12k" style="width: 100%; height: 120px; padding: 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg); color: var(--text-main); font-family: var(--font-sans); margin-bottom: 16px; resize: none; transition: all 0.2s;"></textarea>
       
       <button class="btn-primary" onclick="parseWhatsAppText()" style="margin-bottom: 12px;">Extract Items</button>
       <button class="btn-outline" style="width: 100%; padding: 14px;" onclick="document.getElementById('pasteModal').classList.remove('active')">Cancel</button>
