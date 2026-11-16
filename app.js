@@ -1,10 +1,8 @@
-// --- Landing Page & Navigation ---
+// --- Navigation & Initialization ---
 function launchApp() {
   document.getElementById('landing-page').style.display = 'none';
   document.getElementById('app-workspace').style.display = 'block';
   window.scrollTo(0, 0);
-  
-  // Request iOS Gyroscope Permission on first interaction
   requestGyroPermission();
 
   if (items.length === 0) {
@@ -33,28 +31,28 @@ function resetApp() {
   updatePreview();
 }
 
+// Perfect scroll function
 function scrollToPreview() {
-  document.getElementById('preview-panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  const panel = document.getElementById('preview-panel');
+  const y = panel.getBoundingClientRect().top + window.scrollY - 80;
+  window.scrollTo({ top: y, behavior: 'smooth' });
 }
 
-// Navbar scroll effect
 window.addEventListener('scroll', () => {
   const nav = document.getElementById('nav');
   if (window.scrollY > 50) nav.classList.add('scrolled');
   else nav.classList.remove('scrolled');
 });
 
-// --- Scroll Reveal Animations ---
+// Scroll Reveal
 const observer = new IntersectionObserver((entries) => {
   entries.forEach(entry => {
-    if (entry.isIntersecting) {
-      entry.target.classList.add('active');
-    }
+    if (entry.isIntersecting) entry.target.classList.add('active');
   });
 }, { threshold: 0.1 });
 document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
 
-// --- Hero Tilt Logic (Desktop) ---
+// Hero Tilt
 const heroTilt = document.getElementById('heroTilt');
 const heroReceipt = document.querySelector('.hero-receipt');
 if (heroTilt) {
@@ -134,20 +132,14 @@ function updatePreview() {
     document.getElementById('previewLogo').textContent = bizName.charAt(0).toUpperCase();
   }
 
-  // Update Stamp
   const stamp = document.getElementById('receiptStamp');
   stamp.textContent = status;
   stamp.style.animation = 'none';
   stamp.offsetHeight;
   stamp.style.animation = null;
 
-  // Hide Payment Box if PAID
   const payBox = document.getElementById('receiptPaymentBox');
-  if (status === 'PAID') {
-    payBox.style.display = 'none';
-  } else {
-    payBox.style.display = 'block';
-  }
+  payBox.style.display = (status === 'PAID') ? 'none' : 'block';
 
   let subtotal = 0;
   const tbody = document.getElementById('previewItems');
@@ -157,18 +149,11 @@ function updatePreview() {
     if (item.name.trim() !== '' && item.price > 0) {
       const total = item.qty * item.price;
       subtotal += total;
-      tbody.innerHTML += `
-        <tr>
-          <td>${item.name}</td>
-          <td>${item.qty}</td>
-          <td>${currency}${total.toLocaleString()}</td>
-        </tr>
-      `;
+      tbody.innerHTML += `<tr><td>${item.name}</td><td>${item.qty}</td><td>${currency}${total.toLocaleString()}</td></tr>`;
     }
   });
 
   const grandTotal = subtotal + deliveryFee;
-
   document.getElementById('previewSubtotal').textContent = currency + subtotal.toLocaleString();
   document.getElementById('previewDelivery').textContent = currency + deliveryFee.toLocaleString();
   document.getElementById('previewTotal').textContent = currency + grandTotal.toLocaleString();
@@ -187,7 +172,6 @@ function handleLogo(event) {
   reader.readAsDataURL(file);
 }
 
-// --- Theme Toggle ---
 function toggleWorkspaceTheme() {
   const app = document.getElementById('app-workspace');
   const icon = document.getElementById('themeIcon');
@@ -200,16 +184,10 @@ function toggleWorkspaceTheme() {
   }
 }
 
-// --- 3D Gyroscope & Tilt ---
+// --- Gyroscope & Tilt ---
 function requestGyroPermission() {
   if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
-    DeviceOrientationEvent.requestPermission()
-      .then(permissionState => {
-        if (permissionState === 'granted') {
-          window.addEventListener('deviceorientation', handleGyro);
-        }
-      })
-      .catch(console.error);
+    DeviceOrientationEvent.requestPermission().then(p => { if (p === 'granted') window.addEventListener('deviceorientation', handleGyro); }).catch(console.error);
   } else {
     window.addEventListener('deviceorientation', handleGyro);
   }
@@ -218,14 +196,12 @@ function requestGyroPermission() {
 function handleGyro(event) {
   const card = document.getElementById('receiptCard');
   if (!card) return;
-  const beta = event.beta; // -180 to 180 (front/back)
-  const gamma = event.gamma; // -90 to 90 (left/right)
+  const beta = event.beta;
+  const gamma = event.gamma;
   if (beta === null || gamma === null) return;
   
-  // Clamp values
-  const rotateX = Math.max(-15, Math.min(15, (beta - 45) * 0.3));
-  const rotateY = Math.max(-15, Math.min(15, gamma * 0.3));
-  
+  const rotateX = Math.max(-12, Math.min(12, (beta - 45) * 0.25));
+  const rotateY = Math.max(-12, Math.min(12, gamma * 0.25));
   card.style.transform = `perspective(1000px) rotateX(${-rotateX}deg) rotateY(${rotateY}deg)`;
 }
 
@@ -244,11 +220,11 @@ function initAppTilt() {
   });
 }
 
-// --- Export Logic ---
+// --- Export ---
 async function downloadReceipt() {
   const receipt = document.getElementById('receiptCard');
   const originalTransform = receipt.style.transform;
-  receipt.style.transform = 'none'; // Flatten for export
+  receipt.style.transform = 'none';
   try {
     if (document.fonts && document.fonts.ready) await document.fonts.ready;
     const canvas = await html2canvas(receipt, { scale: 3, backgroundColor: '#ffffff', useCORS: true });
@@ -256,7 +232,7 @@ async function downloadReceipt() {
     link.download = 'VendSlip-Receipt.png';
     link.href = canvas.toDataURL('image/png');
     link.click();
-    showToast('Receipt saved to gallery!');
+    showToast('Receipt saved!');
   } catch (err) {
     showToast('Error generating image.');
   } finally {

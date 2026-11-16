@@ -13,7 +13,6 @@
 
   <style>
     :root {
-      /* App Workspace Variables */
       --bg: #F8FAFC;
       --surface: #FFFFFF;
       --surface-hover: #F1F5F9;
@@ -43,7 +42,7 @@
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: 'Inter', sans-serif; background: #09090B; color: #FAFAFA; line-height: 1.5; -webkit-font-smoothing: antialiased; overflow-x: hidden; scroll-behavior: smooth; }
     
-    /* --- CINEMATIC LANDING PAGE --- */
+    /* --- LANDING PAGE --- */
     #landing-page {
       position: relative; min-height: 100vh; display: flex; flex-direction: column;
       background: radial-gradient(circle at 50% 0%, rgba(16, 185, 129, 0.15) 0%, transparent 50%),
@@ -67,7 +66,7 @@
     }
     .cinematic-nav.scrolled { background: rgba(9, 9, 11, 0.85); backdrop-filter: blur(16px); border-bottom: 1px solid rgba(255,255,255,0.1); padding: 16px 6%; }
     
-    .brand { display: flex; align-items: center; gap: 12px; font-size: 1.4rem; font-weight: 800; letter-spacing: -0.03em; color: #fff; }
+    .brand { display: flex; align-items: center; gap: 12px; font-size: 1.4rem; font-weight: 800; letter-spacing: -0.03em; color: #fff; cursor: pointer; }
     .brand-logo { width: 36px; height: 36px; background: linear-gradient(135deg, #10B981 0%, #4F46E5 100%); border-radius: 10px; display: grid; place-items: center; font-weight: 900; box-shadow: 0 0 20px rgba(16, 185, 129, 0.4); }
     
     .nav-links { display: none; gap: 30px; }
@@ -107,7 +106,6 @@
 
     @keyframes fadeUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
 
-    /* Floating 3D Hero Receipt */
     .hero-receipt-wrapper {
       margin-top: 60px; perspective: 1200px; width: 100%; max-width: 340px;
       animation: fadeUp 1s var(--spring) 0.4s both;
@@ -122,7 +120,6 @@
     .hr-title { font-size: 1.1rem; font-weight: 800; transform: translateZ(15px); }
     .hr-row { display: flex; justify-content: space-between; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: #64748B; margin-bottom: 8px; }
     .hr-total { font-size: 1.2rem; font-weight: 800; color: #0F172A; border-top: 1px solid #E2E8F0; padding-top: 12px; margin-top: 12px; transform: translateZ(25px); }
-    /* FIX: Stamp positioning */
     .hr-stamp { position: absolute; bottom: 20px; right: 20px; color: var(--danger); border: 2px solid var(--danger); padding: 4px 12px; font-weight: 800; font-size: 0.8rem; border-radius: 6px; transform: rotate(-15deg); opacity: 0.8; transform: translateZ(30px) rotate(-15deg); }
 
     /* --- FEATURES SECTION --- */
@@ -154,7 +151,7 @@
     /* --- APPLICATION WORKSPACE --- */
     #app-workspace {
       display: none; background: var(--bg); color: var(--text-main); min-height: 100vh;
-      animation: fadeIn 0.8s var(--spring);
+      animation: fadeIn 0.8s var(--spring); padding-bottom: 100px; /* Space for floating button */
     }
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
@@ -174,7 +171,7 @@
     @media(min-width: 900px) { .container { flex-direction: row; align-items: flex-start; } }
     
     .editor-panel { flex: 1.2; display: flex; flex-direction: column; gap: 20px; }
-    .preview-panel { flex: 1; position: sticky; top: 100px; }
+    .preview-panel { flex: 1; position: sticky; top: 100px; scroll-margin-top: 100px; }
 
     .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; box-shadow: var(--shadow-sm); animation: slideUp 0.5s var(--spring) backwards; }
     .card:nth-child(1) { animation-delay: 0.05s; }
@@ -200,13 +197,13 @@
     .btn-outline { background: transparent; border-color: var(--border); color: var(--text-main); }
     .btn-outline:hover { border-color: var(--primary); color: var(--primary); background: var(--primary-light); }
 
-    /* --- RECEIPT PREVIEW & 3D TILT --- */
+    /* --- RECEIPT PREVIEW --- */
     .receipt-container { perspective: 1000px; width: 100%; display: flex; justify-content: center; }
     .receipt-card { 
       background: #fff; color: #0F172A; width: 100%; max-width: 400px; 
       border-radius: 16px; overflow: hidden; box-shadow: var(--shadow-lg); 
       position: relative; transform-style: preserve-3d; 
-      transition: transform 0.1s ease-out; 
+      transition: transform 0.1s ease-out; will-change: transform;
     }
     
     .receipt-header { padding: 24px; border-bottom: 1px dashed #E2E8F0; display: flex; justify-content: space-between; align-items: flex-start; }
@@ -233,7 +230,6 @@
     .t-row { display: flex; justify-content: space-between; font-size: 0.85rem; color: #64748B; margin-bottom: 8px; }
     .t-row.grand { font-size: 1.2rem; font-weight: 800; color: #0F172A; border-top: 1px solid #E2E8F0; padding-top: 12px; margin-top: 12px; }
 
-    /* Fix: Stamp positioning in workspace */
     .receipt-stamp { position: absolute; top: 100px; right: 20px; color: var(--danger); border: 2px solid var(--danger); padding: 4px 12px; font-weight: 800; font-size: 0.8rem; border-radius: 6px; transform: rotate(-15deg); opacity: 0.8; pointer-events: none; animation: stampSlam 0.4s var(--spring); }
     @keyframes stampSlam { 0% { opacity: 0; transform: scale(1.5) rotate(-30deg); } 100% { opacity: 0.8; transform: scale(1) rotate(-15deg); } }
 
@@ -244,31 +240,45 @@
     
     .receipt-footer { text-align: center; padding: 24px; border-top: 1px dashed #E2E8F0; font-size: 0.8rem; color: #94A3B8; }
 
-    /* Mobile Sticky Preview Button */
+    /* --- FLOATING MOBILE BUTTON --- */
     .mobile-preview-btn {
-      display: none; position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
-      background: var(--primary); color: #fff; padding: 14px 24px; border-radius: 30px;
-      font-weight: 800; font-size: 0.9rem; box-shadow: 0 10px 20px rgba(16, 185, 129, 0.4);
-      z-index: 100; border: none; cursor: pointer; align-items: center; gap: 8px;
+      display: none; 
+      position: fixed; 
+      bottom: 24px; 
+      left: 50%; 
+      transform: translateX(-50%);
+      background: var(--primary); 
+      color: #fff; 
+      padding: 14px 24px; 
+      border-radius: 30px;
+      font-weight: 800; 
+      font-size: 0.9rem; 
+      box-shadow: 0 10px 20px rgba(16, 185, 129, 0.4), 0 0 0 4px var(--bg);
+      z-index: 9999; /* Highest priority */
+      border: none; 
+      cursor: pointer; 
+      align-items: center; 
+      gap: 8px;
+      transition: transform 0.2s;
     }
+    .mobile-preview-btn:active { transform: translateX(-50%) scale(0.95); }
     @media(max-width: 899px) { .mobile-preview-btn { display: flex; } }
 
-    .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(100px); background: var(--text-main); color: var(--bg); padding: 12px 24px; border-radius: 30px; font-weight: 600; box-shadow: 0 10px 30px rgba(0,0,0,0.2); transition: all 0.4s var(--spring); opacity: 0; z-index: 1000; }
+    .toast { position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%) translateY(100px); background: var(--text-main); color: var(--bg); padding: 12px 24px; border-radius: 30px; font-weight: 600; box-shadow: 0 10px 30px rgba(0,0,0,0.2); transition: all 0.4s var(--spring); opacity: 0; z-index: 1000; }
     .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-    /* Scroll Reveal Animations */
     .reveal { opacity: 0; transform: translateY(30px); transition: all 0.8s var(--spring); }
     .reveal.active { opacity: 1; transform: translateY(0); }
   </style>
 </head>
 <body>
 
-  <!-- CINEMATIC LANDING PAGE -->
+  <!-- LANDING PAGE -->
   <div id="landing-page">
     <div class="bg-grid"></div>
     
     <nav class="cinematic-nav" id="nav">
-      <div class="brand">
+      <div class="brand" onclick="backToLanding()">
         <div class="brand-logo">V</div>
         VendSlip
       </div>
@@ -277,7 +287,6 @@
         <a href="#pricing">Pricing</a>
         <a href="#about">About</a>
       </div>
-      <!-- FIX: Renamed button -->
       <button class="btn-hero-cta" onclick="launchApp()">Make a Receipt</button>
     </nav>
 
@@ -304,7 +313,6 @@
       </div>
     </section>
 
-    <!-- NEW: FEATURES SECTION -->
     <section id="features">
       <div class="features-header reveal">
         <h2>Built for the modern vendor.</h2>
@@ -343,7 +351,7 @@
   <!-- APPLICATION WORKSPACE -->
   <div id="app-workspace" data-theme="light">
     <nav class="app-nav">
-      <div class="brand" onclick="backToLanding()" style="cursor: pointer;">
+      <div class="brand" onclick="backToLanding()">
         <div class="brand-logo">V</div>
         VendSlip
       </div>
@@ -466,14 +474,13 @@
               Generated via VendSlip.com.ng
             </div>
 
-            <!-- Fixed Stamp -->
             <div class="receipt-stamp" id="receiptStamp">PAID</div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Mobile Sticky Button -->
+    <!-- FLOATING MOBILE BUTTON -->
     <button class="mobile-preview-btn" onclick="scrollToPreview()">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
       Preview Receipt
