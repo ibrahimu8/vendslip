@@ -76,7 +76,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (!hasSeenTour) {
     setTimeout(() => {
       document.getElementById('tourSheet').classList.add('active');
-    }, 1200); // Slightly delayed for the entry animations to finish
+    }, 1200); 
   }
 });
 
@@ -406,12 +406,10 @@ async function downloadReceipt() {
   try {
     if (document.fonts && document.fonts.ready) await document.fonts.ready;
     
-    // FREEZE ANIMATIONS AND 3D TILT FOR EXPORT
     receipt.classList.add('exporting');
     
     const canvas = await html2canvas(receipt, { scale: 2, backgroundColor: '#ffffff', useCORS: true });
     
-    // RESTORE ANIMATIONS
     receipt.classList.remove('exporting');
     
     const link = document.createElement('a');
@@ -432,12 +430,10 @@ async function shareWhatsApp() {
   try {
     if (document.fonts && document.fonts.ready) await document.fonts.ready;
     
-    // FREEZE ANIMATIONS AND 3D TILT FOR EXPORT
     receipt.classList.add('exporting');
     
     const canvas = await html2canvas(receipt, { scale: 2, backgroundColor: '#ffffff', useCORS: true });
     
-    // RESTORE ANIMATIONS
     receipt.classList.remove('exporting');
     
     canvas.toBlob(async (blob) => {
@@ -470,9 +466,8 @@ function showToast(msg) {
 function init3DTilt() {
   const card = document.getElementById('receiptCard');
   
-  // Desktop Tilt
   card.addEventListener('mousemove', (e) => {
-    if (card.classList.contains('exporting')) return; // Don't tilt during export
+    if (card.classList.contains('exporting')) return;
     
     const rect = card.getBoundingClientRect();
     const x = e.clientX - rect.left;
@@ -480,7 +475,7 @@ function init3DTilt() {
     const centerX = rect.width / 2;
     const centerY = rect.height / 2;
     
-    const rotateX = ((y - centerY) / centerY) * -8; // Slightly reduced tilt for elegance
+    const rotateX = ((y - centerY) / centerY) * -8;
     const rotateY = ((x - centerX) / centerX) * 8;
     
     card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02, 1.02, 1.02)`;
@@ -492,10 +487,9 @@ function init3DTilt() {
     setTimeout(() => { card.style.transition = 'transform 0.1s ease-out'; }, 600);
   });
 
-  // Mobile Gyroscope
   if (window.DeviceOrientationEvent) {
     window.addEventListener('deviceorientation', (event) => {
-      if (card.classList.contains('exporting')) return; // Don't tilt during export
+      if (card.classList.contains('exporting')) return;
       
       const beta = event.beta;
       const gamma = event.gamma;
