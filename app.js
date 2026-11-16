@@ -1,9 +1,16 @@
-// --- Navigation Logic ---
+// --- Landing Page & Navigation ---
 function launchApp() {
   document.getElementById('landing-page').style.display = 'none';
   document.getElementById('app-workspace').style.display = 'block';
   window.scrollTo(0, 0);
-  addItem(); // Add initial item row
+  
+  // Request iOS Gyroscope Permission on first interaction
+  requestGyroPermission();
+
+  if (items.length === 0) {
+    items.push({ name: 'Vintage Jacket', qty: 1, price: 15000 });
+    renderItems();
+  }
   updatePreview();
   initAppTilt();
 }
@@ -14,17 +21,40 @@ function backToLanding() {
   window.scrollTo(0, 0);
 }
 
+function resetApp() {
+  if(!confirm("Start a new receipt?")) return;
+  items = [{ name: '', qty: 1, price: 0 }];
+  renderItems();
+  document.getElementById('bizName').value = '';
+  document.getElementById('buyerName').value = '';
+  document.getElementById('previewLogo').innerHTML = 'A';
+  document.getElementById('previewLogo').style.background = '#F8FAFC';
+  document.getElementById('previewLogo').style.border = '1px solid #E2E8F0';
+  updatePreview();
+}
+
+function scrollToPreview() {
+  document.getElementById('preview-panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
 // Navbar scroll effect
 window.addEventListener('scroll', () => {
   const nav = document.getElementById('nav');
-  if (window.scrollY > 50) {
-    nav.classList.add('scrolled');
-  } else {
-    nav.classList.remove('scrolled');
-  }
+  if (window.scrollY > 50) nav.classList.add('scrolled');
+  else nav.classList.remove('scrolled');
 });
 
-// --- Hero Tilt Logic ---
+// --- Scroll Reveal Animations ---
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('active');
+    }
+  });
+}, { threshold: 0.1 });
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+// --- Hero Tilt Logic (Desktop) ---
 const heroTilt = document.getElementById('heroTilt');
 const heroReceipt = document.querySelector('.hero-receipt');
 if (heroTilt) {
@@ -32,10 +62,8 @@ if (heroTilt) {
     const rect = heroTilt.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
-    const centerX = rect.width / 2;
-    const centerY = rect.height / 2;
-    const rotateX = ((y - centerY) / centerY) * -15;
-    const rotateY = ((x - centerX) / centerX) * 15;
+    const rotateX = ((y - rect.height/2) / (rect.height/2)) * -15;
+    const rotateY = ((x - rect.width/2) / (rect.width/2)) * 15;
     heroReceipt.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.05, 1.05, 1.05)`;
   });
   heroTilt.addEventListener('mouseleave', () => {
@@ -49,6 +77,7 @@ let items = [];
 function addItem() {
   items.push({ name: '', qty: 1, price: 0 });
   renderItems();
+  updatePreview();
 }
 
 function removeItem(index) {
@@ -105,6 +134,21 @@ function updatePreview() {
     document.getElementById('previewLogo').textContent = bizName.charAt(0).toUpperCase();
   }
 
+  // Update Stamp
+  const stamp = document.getElementById('receiptStamp');
+  stamp.textContent = status;
+  stamp.style.animation = 'none';
+  stamp.offsetHeight;
+  stamp.style.animation = null;
+
+  // Hide Payment Box if PAID
+  const payBox = document.getElementById('receiptPaymentBox');
+  if (status === 'PAID') {
+    payBox.style.display = 'none';
+  } else {
+    payBox.style.display = 'block';
+  }
+
   let subtotal = 0;
   const tbody = document.getElementById('previewItems');
   tbody.innerHTML = '';
@@ -156,9 +200,55 @@ function toggleWorkspaceTheme() {
   }
 }
 
+// --- 3D Gyroscope & Tilt ---
+function requestGyroPermission() {
+  if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+    DeviceOrientationEvent.requestPermission()
+      .then(permissionState => {
+        if (permissionState === 'granted') {
+          window.addEventListener('deviceorientation', handleGyro);
+        }
+      })
+      .catch(console.error);
+  } else {
+    window.addEventListener('deviceorientation', handleGyro);
+  }
+}
+
+function handleGyro(event) {
+  const card = document.getElementById('receiptCard');
+  if (!card) return;
+  const beta = event.beta; // -180 to 180 (front/back)
+  const gamma = event.gamma; // -90 to 90 (left/right)
+  if (beta === null || gamma === null) return;
+  
+  // Clamp values
+  const rotateX = Math.max(-15, Math.min(15, (beta - 45) * 0.3));
+  const rotateY = Math.max(-15, Math.min(15, gamma * 0.3));
+  
+  card.style.transform = `perspective(1000px) rotateX(${-rotateX}deg) rotateY(${rotateY}deg)`;
+}
+
+function initAppTilt() {
+  const card = document.getElementById('receiptCard');
+  card.addEventListener('mousemove', (e) => {
+    const rect = card.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const rotateX = ((y - rect.height/2) / (rect.height/2)) * -10;
+    const rotateY = ((x - rect.width/2) / (rect.width/2)) * 10;
+    card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02, 1.02, 1.02)`;
+  });
+  card.addEventListener('mouseleave', () => {
+    card.style.transform = `perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)`;
+  });
+}
+
 // --- Export Logic ---
 async function downloadReceipt() {
   const receipt = document.getElementById('receiptCard');
+  const originalTransform = receipt.style.transform;
+  receipt.style.transform = 'none'; // Flatten for export
   try {
     if (document.fonts && document.fonts.ready) await document.fonts.ready;
     const canvas = await html2canvas(receipt, { scale: 3, backgroundColor: '#ffffff', useCORS: true });
@@ -169,11 +259,15 @@ async function downloadReceipt() {
     showToast('Receipt saved to gallery!');
   } catch (err) {
     showToast('Error generating image.');
+  } finally {
+    receipt.style.transform = originalTransform;
   }
 }
 
 async function shareWhatsApp() {
   const receipt = document.getElementById('receiptCard');
+  const originalTransform = receipt.style.transform;
+  receipt.style.transform = 'none';
   try {
     if (document.fonts && document.fonts.ready) await document.fonts.ready;
     const canvas = await html2canvas(receipt, { scale: 3, backgroundColor: '#ffffff', useCORS: true });
@@ -182,31 +276,16 @@ async function shareWhatsApp() {
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
         await navigator.share({ files: [file], title: 'Receipt', text: 'Here is your receipt.' });
       } else {
-        showToast('Sharing not supported on this browser.');
+        showToast('Sharing not supported.');
       }
     }, 'image/png');
   } catch (err) {
     showToast('Error generating image.');
+  } finally {
+    receipt.style.transform = originalTransform;
   }
 }
 
-// --- App 3D Tilt ---
-function initAppTilt() {
-  const card = document.getElementById('receiptCard');
-  card.addEventListener('mousemove', (e) => {
-    const rect = card.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    const rotateX = ((y - rect.height/2) / (rect.height/2)) * -8;
-    const rotateY = ((x - rect.width/2) / (rect.width/2)) * 8;
-    card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02, 1.02, 1.02)`;
-  });
-  card.addEventListener('mouseleave', () => {
-    card.style.transform = `perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)`;
-  });
-}
-
-// --- Toast ---
 function showToast(msg) {
   const t = document.getElementById('toast');
   t.textContent = msg;
