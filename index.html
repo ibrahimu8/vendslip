@@ -1,637 +1,456 @@
+
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>VendSlip | Instant Receipts</title>
-  <link rel="icon" type="image/jpeg" href="Vendslip.jpg">
-  
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
-  
+  <meta name="theme-color" content="#101b17">
+
+  <title>VendSlip — Professional Receipt Maker</title>
+
+  <meta name="description" content="Create, customize and download professional business receipts with VendSlip.">
+
+  <link rel="stylesheet" href="css/style.css">
+
+  <!-- Receipt image export library -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-
-  <style>
-    :root {
-      --bg: #F8FAFC;
-      --surface: #FFFFFF;
-      --surface-hover: #F1F5F9;
-      --border: #E2E8F0;
-      --text-main: #0F172A;
-      --text-muted: #64748B;
-      --primary: #10B981;
-      --primary-hover: #059669;
-      --ring: rgba(16, 185, 129, 0.2);
-      --header-bg: rgba(255, 255, 255, 0.85);
-      --font-sans: 'Inter', sans-serif;
-      --font-mono: 'JetBrains Mono', monospace;
-      --red: #E11D48;
-      
-      /* Motion Tokens */
-      --spring: cubic-bezier(0.16, 1, 0.3, 1);
-      --smooth: cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    [data-theme="dark"] {
-      --bg: #09090B;
-      --surface: #18181B;
-      --surface-hover: #27272A;
-      --border: #27272A;
-      --text-main: #FAFAFA;
-      --text-muted: #A1A1AA;
-      --header-bg: rgba(9, 9, 11, 0.85);
-      --ring: rgba(16, 185, 129, 0.3);
-    }
-
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-
-    body {
-      font-family: var(--font-sans);
-      background-color: var(--bg);
-      color: var(--text-main);
-      transition: background-color 0.4s var(--smooth), color 0.4s var(--smooth);
-      line-height: 1.5;
-      -webkit-font-smoothing: antialiased;
-      overflow-x: hidden;
-      /* Refined Animated Background */
-      background-image: 
-        radial-gradient(at 0% 0%, rgba(16, 185, 129, 0.12) 0px, transparent 50%),
-        radial-gradient(at 100% 100%, rgba(79, 70, 229, 0.12) 0px, transparent 50%);
-      background-size: 150% 150%;
-      background-attachment: fixed;
-      animation: bgDrift 15s ease-in-out infinite alternate;
-    }
-
-    @keyframes bgDrift {
-      0% { background-position: 0% 0%; }
-      100% { background-position: 100% 100%; }
-    }
-
-    /* --- Header --- */
-    header {
-      position: sticky;
-      top: 0;
-      z-index: 50;
-      background: var(--header-bg);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      border-bottom: 1px solid var(--border);
-      padding: 12px 16px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      transition: border-color 0.4s;
-    }
-
-    .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 1.2rem; letter-spacing: -0.03em; }
-    
-    .logo-3d {
-      width: 32px; height: 32px;
-      background: linear-gradient(135deg, #10B981 0%, #4F46E5 100%);
-      border-radius: 8px;
-      display: grid; place-items: center;
-      color: #fff; font-weight: 800; font-size: 1.1rem;
-      box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3), inset 0 2px 4px rgba(255,255,255,0.4);
-      text-shadow: 0 1px 2px rgba(0,0,0,0.2);
-      transition: transform 0.3s var(--spring);
-    }
-    .brand:hover .logo-3d { transform: scale(1.05) rotate(-5deg); }
-
-    .pro-badge {
-      font-size: 0.65rem; font-weight: 800;
-      padding: 2px 6px; border-radius: 4px;
-      letter-spacing: 0.05em;
-      background: var(--border); color: var(--text-muted);
-      transition: all 0.3s var(--spring);
-    }
-
-    .header-actions { display: flex; align-items: center; gap: 10px; }
-
-    .icon-btn {
-      background: transparent; border: 1px solid var(--border);
-      color: var(--text-main); width: 36px; height: 36px;
-      border-radius: 10px; display: grid; place-items: center;
-      cursor: pointer; transition: all 0.2s var(--spring);
-    }
-    .icon-btn:hover { background: var(--surface-hover); transform: translateY(-1px); }
-    .icon-btn:active { transform: scale(0.95); }
-
-    .btn-outline {
-      padding: 8px 14px; background: transparent;
-      border: 1px solid var(--border); color: var(--text-main);
-      border-radius: 10px; font-weight: 600; font-size: 0.9rem;
-      cursor: pointer; transition: all 0.2s var(--spring);
-    }
-    .btn-outline:hover { background: var(--surface-hover); border-color: var(--text-muted); }
-    .btn-outline:active { transform: scale(0.97); }
-
-    /* --- Layout --- */
-    .app-container {
-      max-width: 1100px; margin: 0 auto; padding: 16px;
-      display: flex; flex-direction: column; gap: 24px;
-    }
-
-    @media (min-width: 900px) {
-      .app-container { flex-direction: row; align-items: flex-start; }
-      .edit-col { flex: 1.2; }
-      .preview-col { flex: 1; position: sticky; top: 80px; }
-    }
-
-    /* --- Mobile Tabs --- */
-    .mobile-tabs {
-      display: flex; background: var(--surface);
-      border: 1px solid var(--border); border-radius: 14px;
-      padding: 4px; margin-bottom: 16px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-    }
-    .mobile-tabs button {
-      flex: 1; padding: 12px; border: none; background: transparent;
-      color: var(--text-muted); font-weight: 600; border-radius: 10px;
-      cursor: pointer; transition: all 0.3s var(--spring); font-size: 0.9rem;
-    }
-    .mobile-tabs button.active {
-      background: var(--surface-hover); color: var(--text-main);
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1); transform: scale(1.02);
-    }
-    @media (min-width: 900px) { .mobile-tabs { display: none; } }
-
-    /* --- Cards & Animations --- */
-    .card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 20px; padding: 24px; margin-bottom: 16px;
-      box-shadow: 0 8px 20px -6px rgba(0, 0, 0, 0.08);
-      animation: slideUpFade 0.7s var(--spring) backwards;
-      transition: border-color 0.3s, box-shadow 0.3s;
-    }
-    .card:nth-child(1) { animation-delay: 0.05s; }
-    .card:nth-child(2) { animation-delay: 0.15s; }
-    .card:nth-child(3) { animation-delay: 0.25s; }
-    
-    .card:hover { border-color: rgba(16, 185, 129, 0.3); }
-
-    @keyframes slideUpFade {
-      from { opacity: 0; transform: translateY(24px) scale(0.98); }
-      to { opacity: 1; transform: translateY(0) scale(1); }
-    }
-
-    .section-title {
-      font-size: 0.8rem; font-weight: 700; color: var(--text-muted);
-      text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 16px;
-    }
-
-    .input-group { margin-bottom: 16px; }
-    .input-row { display: flex; gap: 12px; }
-    .input-row > * { flex: 1; }
-
-    label { display: block; font-size: 0.85rem; font-weight: 600; color: var(--text-muted); margin-bottom: 8px; }
-
-    input, select {
-      width: 100%; padding: 14px; background: var(--bg);
-      border: 1px solid var(--border); border-radius: 12px;
-      color: var(--text-main); font-family: var(--font-sans);
-      font-size: 1rem; transition: all 0.25s var(--smooth);
-    }
-    input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px var(--ring); transform: translateY(-1px); }
-
-    /* --- Currency & Status --- */
-    .currency-wrap { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
-    .currency-btn {
-      padding: 8px 14px; border-radius: 8px; border: 1px solid var(--border);
-      background: var(--surface); color: var(--text-muted);
-      font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all 0.2s var(--spring);
-    }
-    .currency-btn:hover { transform: translateY(-1px); background: var(--surface-hover); }
-    .currency-btn:active { transform: scale(0.95); }
-    .currency-btn.active { border-color: var(--primary); color: var(--primary); background: var(--ring); }
-
-    .status-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 20px; }
-    .status-btn {
-      padding: 14px 8px; border-radius: 12px; border: 1px solid var(--border);
-      background: var(--surface); color: var(--text-muted);
-      font-weight: 700; font-size: 0.75rem; cursor: pointer; transition: all 0.2s var(--spring);
-      text-align: center; letter-spacing: 0.02em;
-    }
-    .status-btn:hover { background: var(--surface-hover); }
-    .status-btn:active { transform: scale(0.96); }
-    
-    .status-btn[data-status="Paid"].active { background: #DCFCE7; border-color: #10B981; color: #065F46; box-shadow: 0 4px 10px rgba(16, 185, 129, 0.2); }
-    .status-btn[data-status="Part Payment"].active { background: #FEF3C7; border-color: #F59E0B; color: #92400E; box-shadow: 0 4px 10px rgba(245, 158, 11, 0.2); }
-    .status-btn[data-status="Pay on Delivery"].active { background: #E0F2FE; border-color: #0EA5E9; color: #075985; box-shadow: 0 4px 10px rgba(14, 165, 233, 0.2); }
-
-    [data-theme="dark"] .status-btn[data-status="Paid"].active { background: rgba(16, 185, 129, 0.15); color: #34D399; }
-    [data-theme="dark"] .status-btn[data-status="Part Payment"].active { background: rgba(245, 158, 11, 0.15); color: #FBBF24; }
-    [data-theme="dark"] .status-btn[data-status="Pay on Delivery"].active { background: rgba(14, 165, 233, 0.15); color: #38BDF8; }
-
-    /* --- Dynamic Items --- */
-    .item-row {
-      background: var(--bg); padding: 16px; border-radius: 14px;
-      border: 1px solid var(--border); margin-bottom: 12px;
-      position: relative; animation: fadeIn 0.4s var(--spring);
-    }
-    @keyframes fadeIn { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
-
-    .remove-item-btn {
-      position: absolute; top: -8px; right: -8px;
-      width: 24px; height: 24px; border-radius: 50%;
-      background: var(--red); color: #fff; border: 2px solid var(--surface);
-      font-size: 12px; display: grid; place-items: center;
-      cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-      transition: transform 0.2s var(--spring);
-    }
-    .remove-item-btn:hover { transform: scale(1.1) rotate(90deg); }
-
-    .quick-price-btns { display: flex; gap: 6px; margin-top: 8px; }
-    .quick-price-btn {
-      padding: 4px 8px; font-size: 0.7rem; font-weight: 600;
-      background: var(--surface-hover); border: 1px solid var(--border);
-      color: var(--text-muted); border-radius: 6px; cursor: pointer;
-      transition: all 0.2s var(--spring);
-    }
-    .quick-price-btn:hover { background: var(--border); transform: translateY(-1px); }
-    .quick-price-btn:active { transform: scale(0.9); }
-
-    /* --- Buttons --- */
-    .btn-primary {
-      width: 100%; padding: 16px; background: var(--primary); color: #fff;
-      border: none; border-radius: 12px; font-weight: 700; font-size: 1rem;
-      cursor: pointer; transition: all 0.25s var(--spring);
-      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
-    }
-    .btn-primary:hover { background: var(--primary-hover); transform: translateY(-2px); box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4); }
-    .btn-primary:active { transform: translateY(1px) scale(0.98); box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3); }
-
-    /* --- Premium Receipt & 3D Tilt --- */
-    .receipt-container { perspective: 1200px; width: 100%; display: flex; justify-content: center; }
-    
-    .receipt-card {
-      background: #fff; color: #0F172A; width: 100%; max-width: 400px;
-      border-radius: 16px; overflow: hidden;
-      box-shadow: 0 20px 40px -10px rgba(0,0,0,0.2);
-      position: relative; margin-bottom: 24px;
-      transform-style: preserve-3d;
-      transition: transform 0.1s ease-out;
-      animation: unfoldReceipt 0.8s var(--spring) backwards;
-    }
-
-    @keyframes unfoldReceipt {
-      0% { opacity: 0; transform: perspective(1000px) rotateX(-10deg) scale(0.95); filter: blur(4px); }
-      100% { opacity: 1; transform: perspective(1000px) rotateX(0deg) scale(1); filter: blur(0); }
-    }
-
-    .receipt-header-banner {
-      height: 85px; background: #10B981; position: relative;
-      padding: 16px; display: flex; justify-content: space-between; align-items: flex-start;
-      transform: translateZ(10px);
-    }
-    .receipt-header-banner.indigo { background: #4F46E5; }
-    .receipt-header-banner.onyx { background: #18181B; }
-    .receipt-header-banner.rose { background: #E11D48; }
-    .receipt-header-banner.gold { background: linear-gradient(135deg, #F59E0B, #B45309); }
-
-    .biz-logo {
-      width: 44px; height: 44px; background: #fff; border-radius: 10px;
-      display: grid; place-items: center; font-weight: 800; font-size: 1.4rem;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.15); overflow: hidden;
-      transform: translateZ(20px);
-    }
-    .biz-logo img { width: 100%; height: 100%; object-fit: cover; }
-
-    .stamp {
-      position: absolute; top: 95px; right: 20px;
-      font-size: 1rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px;
-      color: var(--red); border: 2px solid var(--red);
-      padding: 4px 12px; border-radius: 6px; transform: rotate(-15deg);
-      pointer-events: none; opacity: 0.85; backdrop-filter: blur(2px);
-      animation: stampSlam 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-      transform: translateZ(30px) rotate(-15deg);
-    }
-
-    @keyframes stampSlam {
-      0% { opacity: 0; transform: scale(2.5) rotate(-30deg) translateZ(30px); filter: blur(8px); }
-      100% { opacity: 0.85; transform: scale(1) rotate(-15deg) translateZ(30px); filter: blur(0); }
-    }
-
-    .receipt-body { padding: 24px; transform: translateZ(5px); }
-    .receipt-meta { display: flex; justify-content: space-between; font-size: 0.8rem; color: #64748B; margin-bottom: 20px; }
-
-    .receipt-table { width: 100%; border-collapse: collapse; font-family: var(--font-mono); font-size: 0.85rem; margin-bottom: 20px; }
-    .receipt-table th { text-align: left; padding-bottom: 8px; border-bottom: 1px solid #E2E8F0; color: #64748B; font-weight: 600; }
-    .receipt-table td { padding: 10px 0; border-bottom: 1px dashed #F1F5F9; }
-    .receipt-table th:last-child, .receipt-table td:last-child { text-align: right; }
-
-    .receipt-totals { font-family: var(--font-mono); font-size: 0.85rem; }
-    .t-row { display: flex; justify-content: space-between; margin-bottom: 8px; color: #64748B; }
-    .t-row.grand { font-size: 1.2rem; font-weight: 800; color: #0F172A; border-top: 1px solid #E2E8F0; padding-top: 12px; margin-top: 12px; }
-
-    .bank-details { margin-top: 24px; padding: 16px; background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; font-size: 0.8rem; }
-    .bank-details strong { color: #0F172A; }
-
-    .receipt-zigzag {
-      height: 12px;
-      background: linear-gradient(-45deg, transparent 8px, #fff 0), linear-gradient(45deg, transparent 8px, #fff 0);
-      background-size: 16px 16px; background-repeat: repeat-x; background-position: left bottom;
-    }
-
-    .receipt-watermark {
-      text-align: center; font-size: 0.65rem; color: #94A3B8;
-      padding: 16px; background: #fff; border-top: 1px solid #F1F5F9;
-      letter-spacing: 0.05em; font-weight: 600;
-    }
-
-    /* --- Modal & Tour --- */
-    .modal-overlay {
-      position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(8px);
-      display: flex; align-items: center; justify-content: center; z-index: 100; padding: 16px;
-      opacity: 0; pointer-events: none; transition: opacity 0.3s var(--smooth);
-    }
-    .modal-overlay.active { opacity: 1; pointer-events: all; }
-    .modal-content {
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: 24px; padding: 32px; max-width: 400px; width: 100%;
-      transform: translateY(20px) scale(0.95); transition: transform 0.4s var(--spring);
-      box-shadow: 0 20px 40px -10px rgba(0,0,0,0.3);
-    }
-    .modal-overlay.active .modal-content { transform: translateY(0) scale(1); }
-
-    .tour-bottom-sheet {
-      position: fixed; bottom: -100%; left: 0; right: 0;
-      background: var(--surface); border-top: 1px solid var(--border);
-      border-radius: 24px 24px 0 0; padding: 24px; z-index: 1000;
-      box-shadow: 0 -10px 40px rgba(0,0,0,0.3);
-      transition: bottom 0.5s var(--spring);
-    }
-    .tour-bottom-sheet.active { bottom: 0; }
-    .tour-content { max-width: 500px; margin: 0 auto; }
-    .tour-content h3 { font-size: 1.2rem; color: var(--primary); margin-bottom: 8px; font-weight: 800;}
-    .tour-content p { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 20px; line-height: 1.5; }
-    .tour-nav { display: flex; justify-content: space-between; align-items: center; }
-    .tour-dots { display: flex; gap: 6px; }
-    .tour-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); transition: background 0.3s; }
-    .tour-dot.active { background: var(--primary); }
-    .tour-btn { background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 0.9rem; transition: transform 0.2s var(--spring); }
-    .tour-btn:active { transform: scale(0.95); }
-
-    .toast {
-      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(100px) scale(0.9);
-      background: var(--text-main); color: var(--bg); padding: 12px 24px; border-radius: 30px;
-      font-size: 0.85rem; font-weight: 600; opacity: 0; transition: all 0.4s var(--spring); z-index: 1000;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.2); pointer-events: none;
-    }
-    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
-
-    .hidden { display: none !important; }
-    
-    /* UTILITY: Export Freeze */
-    .exporting .receipt-card {
-      transform: none !important;
-      animation: none !important;
-      box-shadow: none !important;
-    }
-    .exporting .stamp {
-      animation: none !important;
-      transform: rotate(-15deg) !important;
-      opacity: 0.85 !important;
-    }
-  </style>
 </head>
+
 <body>
 
-  <header>
-    <div class="brand">
-      <div class="logo-3d">V</div>
-      VendSlip
-      <span class="pro-badge" id="headerBadge">BETA</span>
-    </div>
-    <div class="header-actions">
-      <button id="themeToggle" class="icon-btn" aria-label="Toggle Theme">
-        <svg id="iconMoon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
-        <svg id="iconSun" class="hidden" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
-      </button>
-      <button class="btn-outline" id="goProBtn">Go Pro</button>
+  <header class="topbar">
+    <a href="#" class="brand">
+      <span class="brand-icon">V</span>
+      <span>Vend<span class="brand-light">Slip</span></span>
+    </a>
+
+    <div class="topbar-actions">
+      <span class="save-indicator" id="saveIndicator">All changes saved</span>
+      <button class="btn btn-outline" id="newReceiptBtn">+ New receipt</button>
     </div>
   </header>
 
   <main class="app-container">
-    
-    <div style="text-align: center; margin-bottom: 8px;">
-      <p style="font-size: 0.85rem; color: var(--text-muted); font-weight: 500;">
-        Instant verified receipts for social & WhatsApp vendors. No sign-up required.
-      </p>
-    </div>
 
-    <div class="mobile-tabs">
-      <button class="active" id="tabEdit" onclick="switchTab('edit')">Edit Slip</button>
-      <button id="tabPreview" onclick="switchTab('preview')">Live Preview (₦<span id="tabTotal">0</span>)</button>
-    </div>
-
-    <div class="edit-col" id="editCol">
-      <div class="card">
-        <div class="section-title">Business Details</div>
-        <div class="input-group">
-          <label>Business Name</label>
-          <input type="text" id="bizName" placeholder="e.g. Ada's Thrifts" value="Ada's Thrifts" oninput="updatePreview()">
-          
-          <div style="display: flex; align-items: center; gap: 12px; margin-top: 12px;">
-            <button id="uploadLogoBtn" class="btn-outline" style="font-size: 0.75rem; padding: 6px 12px;">Upload Store Logo (Pro)</button>
-            <button id="removeLogoBtn" class="hidden" style="background: none; border: none; color: var(--red); font-size: 0.75rem; font-weight: 600; cursor: pointer; text-decoration: underline;">Remove Logo</button>
-            <input type="file" id="logoInput" accept="image/*" class="hidden">
-          </div>
-        </div>
-        
-        <div class="section-title" style="margin-top: 24px;">Currency</div>
-        <div class="currency-wrap" id="currencyWrap">
-          <button class="currency-btn active" data-sym="₦" onclick="setCurrency(this)">₦ NGN</button>
-          <button class="currency-btn" data-sym="$" onclick="setCurrency(this)">$ USD</button>
-          <button class="currency-btn" data-sym="£" onclick="setCurrency(this)">£ GBP</button>
-          <button class="currency-btn" data-sym="₵" onclick="setCurrency(this)">₵ GHS</button>
-        </div>
-
-        <div class="section-title" style="margin-top: 24px;">Buyer Info</div>
-        <div class="input-group">
-          <label>Buyer Name</label>
-          <input type="text" id="buyerName" placeholder="Customer name" value="John Doe" oninput="updatePreview()">
-        </div>
+    <section class="welcome-section">
+      <div>
+        <p class="eyebrow">YOUR BUSINESS, PROFESSIONALLY PRESENTED</p>
+        <h1>Create receipts <span>that mean business.</span></h1>
+        <p class="welcome-description">
+          Create beautiful receipts, customize them and share them with your customers.
+        </p>
       </div>
+    </section>
 
-      <div class="card">
-        <div class="section-title">Items</div>
-        <div id="itemsContainer"></div>
-        
-        <button class="btn-outline" style="width: 100%; padding: 12px; margin-bottom: 8px; display: flex; align-items: center; justify-content: center; gap: 8px;" onclick="document.getElementById('pasteModal').classList.add('active')">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>
-          Paste from WhatsApp
-        </button>
-        
-        <button class="btn-outline" style="width: 100%; border-style: dashed; padding: 14px;" onclick="addItem()">+ Add Another Item</button>
-      </div>
+    <div class="workspace">
 
-      <div class="card">
-        <div class="section-title">Payment Status</div>
-        <div class="status-grid" id="statusGrid">
-          <button class="status-btn active" data-status="Paid" onclick="setStatus(this)">PAID</button>
-          <button class="status-btn" data-status="Part Payment" onclick="setStatus(this)">PART PAID</button>
-          <button class="status-btn" data-status="Pay on Delivery" onclick="setStatus(this)">PAY ON DELIVERY</button>
-        </div>
+      <!-- LEFT: RECEIPT EDITOR -->
+      <section class="editor-panel">
 
-        <div class="input-row" style="margin-top: 16px;">
-          <div class="input-group">
-            <label>Delivery Fee</label>
-            <input type="number" id="deliveryFee" value="2000" placeholder="0.00" oninput="updatePreview()">
-          </div>
-          <div class="input-group hidden" id="amountPaidWrapper">
-            <label>Amount Paid So Far</label>
-            <input type="number" id="amountPaid" value="0" placeholder="0.00" oninput="updatePreview()">
+        <div class="panel-heading">
+          <div>
+            <h2>Receipt details</h2>
+            <p>Fill in the details below.</p>
           </div>
         </div>
 
-        <div id="bankDetailsForm" class="hidden" style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border);">
-          <div class="section-title">Pay To (Seller):</div>
-          <div class="input-group">
-            <label>Bank Name</label>
-            <input type="text" id="bankName" placeholder="e.g. GTBank" value="GTBank" oninput="updatePreview()">
-          </div>
-          <div class="input-row">
-            <div class="input-group">
-              <label>Account Number</label>
-              <input type="text" id="accNumber" placeholder="0123456789" value="0123456789" oninput="updatePreview()">
+        <form id="receiptForm">
+
+          <!-- BUSINESS INFORMATION -->
+          <div class="form-section">
+            <h3>Business information</h3>
+
+            <div class="logo-upload-area">
+              <div class="logo-preview" id="logoPreview">
+                <span>LOGO</span>
+              </div>
+
+              <div class="logo-upload-text">
+                <strong>Business logo</strong>
+                <p>Upload your business logo.</p>
+                <label for="logoInput" class="upload-link">Choose image</label>
+                <input type="file" id="logoInput" accept="image/*" hidden>
+              </div>
             </div>
-            <div class="input-group">
-              <label>Account Name</label>
-              <input type="text" id="accName" placeholder="Ada Okafor" value="Ada Okafor" oninput="updatePreview()">
+
+            <div class="form-group">
+              <label for="businessName">Business name</label>
+              <input type="text" id="businessName" placeholder="e.g. Smith Enterprises">
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="businessEmail">Email</label>
+                <input type="email" id="businessEmail" placeholder="business@email.com">
+              </div>
+
+              <div class="form-group">
+                <label for="businessPhone">Phone</label>
+                <input type="tel" id="businessPhone" placeholder="+234...">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="businessAddress">Business address</label>
+              <textarea id="businessAddress" rows="2" placeholder="Business address"></textarea>
             </div>
           </div>
-        </div>
-      </div>
-    </div>
 
-    <div class="preview-col" id="previewCol" style="display: none;">
-      <div class="receipt-container">
-        <div class="receipt-card" id="receiptCard">
-          
-          <div class="receipt-header-banner" id="receiptBanner">
-            <div class="biz-logo" id="receiptLogo">A</div>
-            <div class="stamp" id="receiptStamp">PAID</div>
+          <!-- CUSTOMER INFORMATION -->
+          <div class="form-section">
+            <h3>Customer information</h3>
+
+            <div class="form-group">
+              <label for="customerName">Customer name</label>
+              <input type="text" id="customerName" placeholder="Customer's full name">
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="customerEmail">Customer email</label>
+                <input type="email" id="customerEmail" placeholder="customer@email.com">
+              </div>
+
+              <div class="form-group">
+                <label for="customerPhone">Customer phone</label>
+                <input type="tel" id="customerPhone" placeholder="Phone number">
+              </div>
+            </div>
           </div>
 
-          <div class="receipt-body">
-            <div class="receipt-meta">
+          <!-- RECEIPT INFORMATION -->
+          <div class="form-section">
+            <h3>Receipt information</h3>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="receiptNumber">Receipt number</label>
+                <input type="text" id="receiptNumber" placeholder="VS-0001">
+              </div>
+
+              <div class="form-group">
+                <label for="receiptDate">Date</label>
+                <input type="date" id="receiptDate">
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="currency">Currency</label>
+                <select id="currency">
+                  <option value="NGN">NGN — Nigerian Naira</option>
+                  <option value="USD">USD — US Dollar</option>
+                  <option value="GBP">GBP — British Pound</option>
+                  <option value="EUR">EUR — Euro</option>
+                  <option value="GHS">GHS — Ghanaian Cedi</option>
+                  <option value="KES">KES — Kenyan Shilling</option>
+                  <option value="ZAR">ZAR — South African Rand</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="paymentStatus">Payment status</label>
+                <select id="paymentStatus">
+                  <option value="Paid">Paid</option>
+                  <option value="Pending">Pending</option>
+                  <option value="Partially Paid">Partially Paid</option>
+                  <option value="Unpaid">Unpaid</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- ITEMS -->
+          <div class="form-section">
+            <div class="section-title-row">
               <div>
-                <strong style="color: #0F172A; font-size: 1rem;" id="receiptBizName">Ada's Thrifts</strong><br>
-                <span id="receiptDate">Oct 24, 2023</span><br>
-                <span style="font-size: 0.7rem; color: #94A3B8;">Ref: <span id="receiptRef">VS-XXXXX</span></span>
+                <h3>Items and services</h3>
+                <p>Add the products or services purchased.</p>
               </div>
-              <div style="text-align: right;">
-                <span>Billed to:</span><br>
-                <strong style="color: #0F172A;" id="receiptBuyer">John Doe</strong>
+
+              <button type="button" class="btn btn-small btn-outline" id="addItemBtn">
+                + Add item
+              </button>
+            </div>
+
+            <div id="itemsContainer">
+
+              <div class="item-row">
+                <div class="form-group item-description">
+                  <label>Description</label>
+                  <input type="text" class="item-name" placeholder="Product or service">
+                </div>
+
+                <div class="form-group item-quantity">
+                  <label>Qty</label>
+                  <input type="number" class="item-qty" min="1" value="1">
+                </div>
+
+                <div class="form-group item-price">
+                  <label>Price</label>
+                  <input type="number" class="item-price-input" min="0" step="0.01" placeholder="0">
+                </div>
+
+                <button type="button" class="remove-item-btn" aria-label="Remove item">×</button>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- DISCOUNT AND TAX -->
+          <div class="form-section">
+            <h3>Additional charges</h3>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="discount">Discount</label>
+                <input type="number" id="discount" min="0" value="0" placeholder="0">
+              </div>
+
+              <div class="form-group">
+                <label for="tax">Tax (%)</label>
+                <input type="number" id="tax" min="0" value="0" placeholder="0">
+              </div>
+            </div>
+          </div>
+
+          <!-- PAYMENT DETAILS -->
+          <div class="form-section">
+            <h3>Payment details</h3>
+
+            <div class="form-group">
+              <label for="paymentMethod">Payment method</label>
+              <select id="paymentMethod">
+                <option value="Bank Transfer">Bank Transfer</option>
+                <option value="Cash">Cash</option>
+                <option value="Card">Card</option>
+                <option value="Mobile Money">Mobile Money</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="paymentReference">Payment reference</label>
+              <input type="text" id="paymentReference" placeholder="Transaction reference">
+            </div>
+
+            <div class="form-group">
+              <label for="bankDetails">Bank details</label>
+              <textarea id="bankDetails" rows="3" placeholder="Bank name, account name and account number"></textarea>
+            </div>
+          </div>
+
+          <!-- THEME -->
+          <div class="form-section">
+            <h3>Receipt appearance</h3>
+
+            <div class="form-group">
+              <label for="receiptTheme">Choose a theme</label>
+              <select id="receiptTheme">
+                <option value="classic">Classic</option>
+                <option value="midnight">Midnight</option>
+                <option value="minimal">Minimal</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- NOTES -->
+          <div class="form-section">
+            <h3>Additional note</h3>
+
+            <div class="form-group">
+              <label for="receiptNote">Message to customer</label>
+              <textarea id="receiptNote" rows="3" placeholder="Thank you for your patronage!"></textarea>
+            </div>
+          </div>
+
+        </form>
+
+      </section>
+
+      <!-- RIGHT: LIVE RECEIPT PREVIEW -->
+      <section class="preview-panel">
+
+        <div class="preview-heading">
+          <div>
+            <h2>Live preview</h2>
+            <p>Your receipt updates as you type.</p>
+          </div>
+
+          <span class="live-badge">
+            <span></span> LIVE
+          </span>
+        </div>
+
+        <div class="receipt-wrapper">
+
+          <div id="receiptPreview" class="receipt classic">
+
+            <div class="receipt-header">
+              <div class="receipt-business">
+                <div class="receipt-logo" id="previewLogo">
+                  V
+                </div>
+
+                <h2 id="previewBusinessName">Your Business Name</h2>
+                <p id="previewBusinessAddress">Your business address</p>
+                <p id="previewBusinessContact">Email or phone</p>
+              </div>
+
+              <div class="receipt-label">
+                <h1>RECEIPT</h1>
+                <p id="previewReceiptNumber">#VS-0001</p>
               </div>
             </div>
 
-            <table class="receipt-table">
-              <thead>
-                <tr>
-                  <th>Item</th>
-                  <th>Qty</th>
-                  <th>Price</th>
-                </tr>
-              </thead>
-              <tbody id="receiptItems"></tbody>
-            </table>
+            <div class="receipt-divider"></div>
+
+            <div class="receipt-info-grid">
+              <div>
+                <span class="receipt-muted">BILLED TO</span>
+                <h3 id="previewCustomerName">Customer Name</h3>
+                <p id="previewCustomerEmail">Customer email</p>
+                <p id="previewCustomerPhone"></p>
+              </div>
+
+              <div class="receipt-date-info">
+                <span class="receipt-muted">DATE ISSUED</span>
+                <h3 id="previewDate">Date</h3>
+
+                <span class="receipt-muted status-label">PAYMENT STATUS</span>
+                <strong id="previewStatus" class="status-pill">PAID</strong>
+              </div>
+            </div>
+
+            <div class="receipt-table-wrapper">
+              <table class="receipt-table">
+                <thead>
+                  <tr>
+                    <th>DESCRIPTION</th>
+                    <th>QTY</th>
+                    <th>PRICE</th>
+                    <th>AMOUNT</th>
+                  </tr>
+                </thead>
+
+                <tbody id="previewItems">
+                  <tr>
+                    <td>Sample item</td>
+                    <td>1</td>
+                    <td>0.00</td>
+                    <td>0.00</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
 
             <div class="receipt-totals">
-              <div class="t-row"><span>Subtotal</span> <span id="receiptSubtotal">₦0</span></div>
-              <div class="t-row"><span>Delivery</span> <span id="receiptDelivery">₦0</span></div>
-              <div class="t-row grand"><span>Total</span> <span id="receiptTotal">₦0</span></div>
-              <div class="t-row" id="receiptBalanceRow" style="color: var(--red); margin-top: 8px; font-weight: bold;">
-                <span>Balance Due</span> <span id="receiptBalance">₦0</span>
+              <div class="total-line">
+                <span>Subtotal</span>
+                <strong id="previewSubtotal">₦0.00</strong>
+              </div>
+
+              <div class="total-line">
+                <span>Discount</span>
+                <strong id="previewDiscount">₦0.00</strong>
+              </div>
+
+              <div class="total-line">
+                <span>Tax</span>
+                <strong id="previewTax">₦0.00</strong>
+              </div>
+
+              <div class="total-line grand-total">
+                <span>TOTAL</span>
+                <strong id="previewTotal">₦0.00</strong>
               </div>
             </div>
 
-            <div id="cashNote" class="hidden" style="margin-top: 16px; font-size: 0.75rem; color: #64748B; font-style: italic; text-align: center;">
-              Please have exact cash ready for the dispatch rider.
+            <div class="receipt-payment">
+              <h3>PAYMENT INFORMATION</h3>
+              <p><strong>Method:</strong> <span id="previewPaymentMethod">Bank Transfer</span></p>
+              <p><strong>Reference:</strong> <span id="previewPaymentReference">—</span></p>
+              <p id="previewBankDetails">Bank details will appear here.</p>
             </div>
 
-            <div class="bank-details hidden" id="receiptBankDetails">
-              <p style="font-weight: 800; color: #0F172A; margin-bottom: 8px;">Pay To (Seller):</p>
-              <p>Bank: <strong id="rBankName">-</strong></p>
-              <p>Acct No: <strong id="rAccNumber">-</strong></p>
-              <p>Acct Name: <strong id="rAccName">-</strong></p>
+            <div class="receipt-note">
+              <p id="previewNote">Thank you for your patronage!</p>
             </div>
+
+            <div class="receipt-footer">
+              <p>Thank you for choosing us.</p>
+              <span>Powered by VendSlip</span>
+            </div>
+
           </div>
 
-          <div class="receipt-zigzag"></div>
-          <div class="receipt-watermark" id="receiptWatermark">Generated via VendSlip.com.ng</div>
         </div>
-      </div>
 
-      <div class="card" style="padding: 16px; margin-bottom: 16px;">
-        <label style="margin-bottom: 8px;">Receipt Theme</label>
-        <div class="currency-wrap" id="themeWrap">
-          <button class="currency-btn active" style="background: #10B981; border-color: #10B981; color: #fff;" onclick="setReceiptTheme('emerald', this)">Emerald</button>
-          <button class="currency-btn" style="background: #4F46E5; border-color: #4F46E5; color: #fff;" onclick="setReceiptTheme('indigo', this)">Indigo</button>
-          <button class="currency-btn" style="background: #18181B; border-color: #18181B; color: #fff;" onclick="setReceiptTheme('onyx', this)">Onyx</button>
-          <button class="currency-btn" style="background: #E11D48; border-color: #E11D48; color: #fff;" onclick="setReceiptTheme('rose', this)">Rose</button>
-          <button class="currency-btn" style="background: linear-gradient(135deg, #F59E0B, #B45309); border: none; color: #fff;" onclick="checkProTheme('gold', this)">Gold</button>
+        <!-- ACTION BUTTONS -->
+        <div class="receipt-actions">
+
+          <button type="button" class="btn btn-primary" id="downloadPngBtn">
+            ↓ Download PNG
+          </button>
+
+          <button type="button" class="btn btn-outline" id="printReceiptBtn">
+            Print / Save PDF
+          </button>
+
+          <button type="button" class="btn btn-outline" id="whatsappBtn">
+            Share on WhatsApp
+          </button>
+
+          <button type="button" class="btn btn-outline" id="saveReceiptBtn">
+            Save receipt
+          </button>
+
         </div>
-      </div>
 
-      <div class="input-row">
-        <button class="btn-primary" onclick="downloadReceipt()" id="downloadBtn">Download HD Receipt</button>
-        <button class="btn-primary" style="background: #25D366; box-shadow: 0 4px 12px rgba(37, 211, 102, 0.3);" onclick="shareWhatsApp()">Share to WhatsApp</button>
-      </div>
+      </section>
+
     </div>
+
+    <!-- SAVED RECEIPTS -->
+    <section class="history-section">
+      <div class="history-heading">
+        <div>
+          <h2>Saved receipts</h2>
+          <p>Your receipts saved on this device.</p>
+        </div>
+      </div>
+
+      <div id="receiptHistory" class="receipt-history">
+        <p class="empty-history">No saved receipts yet.</p>
+      </div>
+    </section>
+
+    <!-- UPGRADE -->
+    <section class="upgrade-section">
+      <div>
+        <span class="upgrade-tag">VENDSLIP PRO</span>
+        <h2>Ready to take your business further?</h2>
+        <p>Explore additional features with VendSlip Pro.</p>
+      </div>
+
+      <a
+        href="https://paystack.com/pay/REPLACE_WITH_YOUR_LINK"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="btn btn-upgrade"
+      >
+        Upgrade to Pro →
+      </a>
+    </section>
 
   </main>
 
-  <!-- Pro Modal -->
-  <div class="modal-overlay" id="proModal">
-    <div class="modal-content">
-      <h2 style="font-size: 1.5rem; margin-bottom: 8px; font-weight: 800;">Upgrade to VendSlip Pro</h2>
-      <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 24px;">Stand out with premium features designed for serious vendors.</p>
-      
-      <ul style="list-style: none; margin-bottom: 24px; font-size: 0.95rem; line-height: 2; font-weight: 500;">
-        <li style="display: flex; align-items: center; gap: 8px;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg> Upgrade to the "Verified Merchant" Badge</li>
-        <li style="display: flex; align-items: center; gap: 8px;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg> Upload Your Business Logo</li>
-        <li style="display: flex; align-items: center; gap: 8px;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg> Unlock Luxury Gold & Custom Themes</li>
-        <li style="display: flex; align-items: center; gap: 8px;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg> Remove the large VendSlip Watermark</li>
-      </ul>
+  <footer class="site-footer">
+    <p>© <span id="currentYear"></span> VendSlip. Built for businesses.</p>
+  </footer>
 
-      <a id="paystackLink" href="https://paystack.shop/pay/30uz0wj30l?return_url=https://vendslip.com.ng?success=true&sig=VendSlipSecret99" class="btn-primary" style="display: block; text-align: center; text-decoration: none; margin-bottom: 12px;">Upgrade Now — ₦2,000</a>
-      <button class="btn-outline" style="width: 100%; padding: 14px;" onclick="closeProModal()">Maybe Later</button>
-    </div>
-  </div>
+  <script src="js/app.js"></script>
 
-  <!-- Paste Modal -->
-  <div class="modal-overlay" id="pasteModal">
-    <div class="modal-content">
-      <h2 style="font-size: 1.3rem; margin-bottom: 8px; font-weight: 800;">Paste Order Details</h2>
-      <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 16px;">Paste the text from your WhatsApp chat. We'll automatically detect the items and prices.</p>
-      
-      <textarea id="whatsappText" placeholder="Example:&#10;2x Denim Jacket - 15000&#10;Wrapper 5000&#10;1 x Gold Chain = 12k" style="width: 100%; height: 120px; padding: 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg); color: var(--text-main); font-family: var(--font-sans); margin-bottom: 16px; resize: none; transition: all 0.2s;"></textarea>
-      
-      <button class="btn-primary" onclick="parseWhatsAppText()" style="margin-bottom: 12px;">Extract Items</button>
-      <button class="btn-outline" style="width: 100%; padding: 14px;" onclick="document.getElementById('pasteModal').classList.remove('active')">Cancel</button>
-    </div>
-  </div>
-
-  <div class="tour-bottom-sheet" id="tourSheet">
-    <div class="tour-content">
-      <h3 id="tourTitle">Welcome to VendSlip</h3>
-      <p id="tourText">The fastest way to create professional receipts for WhatsApp and IG vendors. No sign-up required.</p>
-      <div class="tour-nav">
-        <div class="tour-dots">
-          <div class="tour-dot active"></div>
-          <div class="tour-dot"></div>
-          <div class="tour-dot"></div>
-        </div>
-        <button class="tour-btn" id="tourNextBtn">Next</button>
-      </div>
-    </div>
-  </div>
-
-  <div id="toast" class="toast">Saved!</div>
-
-  <script src="app.js"></script>
 </body>
 </html>
+
