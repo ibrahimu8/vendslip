@@ -230,7 +230,7 @@ function initAppTilt() {
   });
 }
 
-// --- Export ---
+// --- Export & WhatsApp Share ---
 async function downloadReceipt() {
   const receipt = document.getElementById('receiptCard');
   const originalTransform = receipt.style.transform;
@@ -250,22 +250,7 @@ async function downloadReceipt() {
   }
 }
 
-// --- Share Modal Logic ---
-function openShareModal() {
-  const modal = document.getElementById('shareModal');
-  modal.style.opacity = '1';
-  modal.style.pointerEvents = 'all';
-  modal.querySelector('.modal-content').style.transform = 'translateY(0)';
-}
-
-function closeShareModal() {
-  const modal = document.getElementById('shareModal');
-  modal.style.opacity = '0';
-  modal.style.pointerEvents = 'none';
-  modal.querySelector('.modal-content').style.transform = 'translateY(20px)';
-}
-
-async function shareToApp(platform) {
+async function shareWhatsApp() {
   const receipt = document.getElementById('receiptCard');
   const originalTransform = receipt.style.transform;
   receipt.style.transform = 'none';
@@ -277,33 +262,33 @@ async function shareToApp(platform) {
 
     canvas.toBlob(async (blob) => {
       const file = new File([blob], 'VendSlip-Receipt.png', { type: 'image/png' });
-
-      if (platform === 'whatsapp') {
-        if (navigator.canShare && navigator.canShare({ files: [file] })) {
-          await navigator.share({ files: [file], title: 'Receipt', text: 'Here is your receipt.' });
-          closeShareModal();
-        } else {
-          downloadBlob(blob);
-          showToast('Image downloaded. Open WhatsApp to send.');
-          closeShareModal();
+      
+      // Check if Web Share API with files is supported (Mobile)
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        try {
+          await navigator.share({
+            files: [file],
+            title: 'Receipt',
+            text: 'Here is your receipt.'
+          });
+        } catch (err) {
+          if (err.name !== 'AbortError') {
+            showToast('Share cancelled.');
+          }
         }
       } else {
-        downloadBlob(blob);
-        showToast(`Image saved! Open ${platform.charAt(0).toUpperCase() + platform.slice(1)} to share.`);
-        closeShareModal();
+        // Fallback for Desktop Browsers
+        const link = document.createElement('a');
+        link.download = 'VendSlip-Receipt.png';
+        link.href = URL.createObjectURL(blob);
+        link.click();
+        showToast('Image downloaded. Open WhatsApp to send.');
       }
     }, 'image/png');
   } catch (err) {
     receipt.style.transform = originalTransform;
     showToast('Error generating image.');
   }
-}
-
-function downloadBlob(blob) {
-  const link = document.createElement('a');
-  link.download = 'VendSlip-Receipt.png';
-  link.href = URL.createObjectURL(blob);
-  link.click();
 }
 
 function showToast(msg) {
