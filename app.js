@@ -122,7 +122,6 @@ function updatePreview() {
   const deliveryFee = parseFloat(document.getElementById('deliveryFee').value) || 0;
   const status = document.getElementById('status').value;
   
-  // Seller Bank Details
   const bankName = document.getElementById('bankName').value || '-';
   const accNumber = document.getElementById('accNumber').value || '-';
   const accName = document.getElementById('accName').value || '-';
@@ -142,7 +141,6 @@ function updatePreview() {
   stamp.offsetHeight;
   stamp.style.animation = null;
 
-  // Hide bank details if PAID
   const payBox = document.getElementById('receiptPaymentBox');
   if (status === 'PAID') {
     payBox.style.display = 'none';
@@ -252,26 +250,60 @@ async function downloadReceipt() {
   }
 }
 
-async function shareWhatsApp() {
+// --- Share Modal Logic ---
+function openShareModal() {
+  const modal = document.getElementById('shareModal');
+  modal.style.opacity = '1';
+  modal.style.pointerEvents = 'all';
+  modal.querySelector('.modal-content').style.transform = 'translateY(0)';
+}
+
+function closeShareModal() {
+  const modal = document.getElementById('shareModal');
+  modal.style.opacity = '0';
+  modal.style.pointerEvents = 'none';
+  modal.querySelector('.modal-content').style.transform = 'translateY(20px)';
+}
+
+async function shareToApp(platform) {
   const receipt = document.getElementById('receiptCard');
   const originalTransform = receipt.style.transform;
   receipt.style.transform = 'none';
+
   try {
     if (document.fonts && document.fonts.ready) await document.fonts.ready;
     const canvas = await html2canvas(receipt, { scale: 3, backgroundColor: '#ffffff', useCORS: true });
+    receipt.style.transform = originalTransform;
+
     canvas.toBlob(async (blob) => {
       const file = new File([blob], 'VendSlip-Receipt.png', { type: 'image/png' });
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({ files: [file], title: 'Receipt', text: 'Here is your receipt.' });
+
+      if (platform === 'whatsapp') {
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          await navigator.share({ files: [file], title: 'Receipt', text: 'Here is your receipt.' });
+          closeShareModal();
+        } else {
+          downloadBlob(blob);
+          showToast('Image downloaded. Open WhatsApp to send.');
+          closeShareModal();
+        }
       } else {
-        showToast('Sharing not supported.');
+        downloadBlob(blob);
+        showToast(`Image saved! Open ${platform.charAt(0).toUpperCase() + platform.slice(1)} to share.`);
+        closeShareModal();
       }
     }, 'image/png');
   } catch (err) {
-    showToast('Error generating image.');
-  } finally {
     receipt.style.transform = originalTransform;
+    showToast('Error generating image.');
   }
+}
+
+function downloadBlob(blob) {
+  const link = document.createElement('a');
+  link.download = 'VendSlip-Receipt.png';
+  link.href = URL.createObjectURL(blob);
+  link.click();
 }
 
 function showToast(msg) {

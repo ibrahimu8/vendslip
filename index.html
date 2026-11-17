@@ -277,7 +277,7 @@
     </nav>
 
     <section class="hero-section">
-      <div class="hero-badge">VENDSLIP PRO V2.0</div>
+      <div class="hero-badge">VENDSLIP V1.0</div>
       <h1 class="hero-title">Receipts that mean business.</h1>
       <p class="hero-subtitle">The most advanced, frictionless receipt generator built for the next generation of social commerce vendors. No sign-ups. No downloads. Just pure speed.</p>
       <div class="hero-actions">
@@ -422,7 +422,7 @@
         <div class="card">
           <div class="section-title">Actions</div>
           <button class="btn btn-primary" onclick="downloadReceipt()" style="margin-bottom: 12px;">Download PNG</button>
-          <button class="btn btn-outline" style="width: 100%;" onclick="shareWhatsApp()">Share to WhatsApp</button>
+          <button class="btn btn-outline" style="width: 100%;" onclick="openShareModal()">Share Receipt</button>
         </div>
       </div>
 
@@ -490,6 +490,44 @@
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
       Preview Receipt
     </button>
+  </div>
+
+  <!-- SHARE MODAL -->
+  <div class="modal-overlay" id="shareModal" style="position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; z-index: 10000; opacity: 0; pointer-events: none; transition: opacity 0.3s;">
+    <div class="modal-content" style="background: var(--surface); border: 1px solid var(--border); border-radius: 24px; padding: 32px; max-width: 400px; width: 90%; transform: translateY(20px); transition: transform 0.3s var(--spring);">
+      <h2 style="font-size: 1.5rem; font-weight: 800; margin-bottom: 8px;">Share Receipt</h2>
+      <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 24px;">Choose where to send this receipt.</p>
+      
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px;">
+        
+        <!-- WhatsApp -->
+        <button onclick="shareToApp('whatsapp')" style="display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 16px; border-radius: 16px; border: 1px solid var(--border); background: var(--bg); cursor: pointer; transition: all 0.2s;">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="#25D366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+          <span style="font-size: 0.85rem; font-weight: 700; color: var(--text-main);">WhatsApp</span>
+        </button>
+
+        <!-- Instagram -->
+        <button onclick="shareToApp('instagram')" style="display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 16px; border-radius: 16px; border: 1px solid var(--border); background: var(--bg); cursor: pointer; transition: all 0.2s;">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="url(#ig-gradient)"><defs><linearGradient id="ig-gradient" x1="0%" y1="100%" x2="100%" y2="0%"><stop offset="0%" stop-color="#fccc63"/><stop offset="50%" stop-color="#e83a5f"/><stop offset="100%" stop-color="#b736a8"/></linearGradient></defs><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+          <span style="font-size: 0.85rem; font-weight: 700; color: var(--text-main);">Instagram</span>
+        </button>
+
+        <!-- Facebook -->
+        <button onclick="shareToApp('facebook')" style="display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 16px; border-radius: 16px; border: 1px solid var(--border); background: var(--bg); cursor: pointer; transition: all 0.2s;">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="#1877F2"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.469h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.469h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+          <span style="font-size: 0.85rem; font-weight: 700; color: var(--text-main);">Facebook</span>
+        </button>
+
+        <!-- Snapchat -->
+        <button onclick="shareToApp('snapchat')" style="display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 16px; border-radius: 16px; border: 1px solid var(--border); background: var(--bg); cursor: pointer; transition: all 0.2s;">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="#FFFC00"><path d="M12.206 21.83c-1.71 0-2.767-.83-3.77-1.633-.716-.574-1.393-1.115-2.256-1.115-.207 0-.42.025-.636.076-.712.167-1.28.53-1.82 1.01-.277.245-.547.48-.75.48a.5.5 0 0 1-.39-.183c-.21-.25-.23-.633-.05-.98.448-.86 1.15-1.43 1.835-1.988.53-.432.923-.75 1.015-1.263.09-.503-.114-1.02-.34-1.564l-.03-.07c-.22-.54-.45-1.09-.77-1.57-.44-.66-1.01-1.02-1.66-1.17-.15-.035-.3-.05-.45-.05-.26 0-.51.07-.68.2-.24.18-.33.47-.35.8-.01.17-.02.35-.15.45-.16.13-.39.15-.62.15-.28 0-.58-.03-.87-.07-.36-.05-.7-.1-.98-.1-.13 0-.25.01-.36.04-.4.1-.65.35-.78.75-.12.37-.09.8.08 1.17.27.6.88.97 1.55 1.25.45.18.93.3 1.4.4.5.1.98.2 1.37.42.38.22.58.57.58 1.04 0 .6-.4 1.12-1.06 1.4-.33.14-.68.22-1.03.3-.58.12-1.15.24-1.6.55-.46.32-.72.8-.72 1.34 0 .68.45 1.26 1.2 1.55.28.1.58.16.88.21.53.1 1.06.19 1.5.5.4.28.64.7.7 1.2.08.57-.13 1.17-.58 1.66-.27.3-.6.56-.95.8-.17.12-.35.24-.53.36l-.28.18c-.3.2-.6.4-.9.6l-.3.2c-.2.13-.42.2-.63.2-.2 0-.4-.07-.57-.2l-.27-.2c-.2-.14-.4-.28-.6-.4-.23-.15-.45-.3-.67-.45-.27-.18-.53-.37-.78-.57l-.3-.23c-.32-.24-.62-.47-.85-.76-.27-.33-.4-.72-.36-1.15.06-.57.37-1.07.86-1.4.32-.23.7-.35 1.08-.45.4-.1.8-.17 1.2-.25.28-.06.56-.12.84-.2.2-.05.4-.13.57-.24.25-.16.4-.4.4-.7 0-.36-.24-.64-.7-.8-.38-.13-.8-.18-1.2-.22-.5-.05-1-.1-1.5-.28-.5-.18-.9-.5-1.17-.95-.28-.47-.4-1.02-.33-1.58.07-.6.35-1.17.78-1.6.42-.4.98-.66 1.6-.7.14-.01.27-.02.4-.02.46 0 .9.1 1.34.2.48.12.98.25 1.46.15.4-.08.72-.32.98-.63.36-.42.63-.92.97-1.47.34-.55.76-1.2 1.35-1.65.62-.47 1.38-.68 2.15-.6.42.05.84.2 1.22.44.4.25.74.6 1.02 1.02.3.43.53.92.75 1.4.22.5.44 1.01.7 1.45.15.25.35.45.58.58.32.18.7.23 1.07.15.34-.07.67-.2 1.0-.33.34-.13.7-.25 1.08-.27.55-.02 1.08.2 1.45.62.37.42.55.98.5 1.55-.05.58-.3 1.1-.72 1.48-.4.36-.94.55-1.48.53-.22 0-.44-.04-.65-.1-.4-.1-.8-.2-1.2-.2-.2 0-.4.02-.6.07-.3.08-.56.25-.7.54-.15.3-.18.63-.15.96.03.38.14.74.34 1.06.18.28.45.5.73.68.4.25.84.46 1.28.65.38.17.77.33 1.15.5.3.13.58.3.83.5.35.28.55.7.55 1.15 0 .55-.3 1.05-.8 1.3-.32.17-.68.25-1.04.3-.58.07-1.16.05-1.72-.05-.35-.06-.7-.14-1.05-.15-.45-.02-.9.05-1.3.25-.4.2-.72.5-1.0.85-.28.36-.55.75-.88 1.08-.42.4-.92.72-1.5.92-.35.12-.72.18-1.08.18z"/></svg>
+          <span style="font-size: 0.85rem; font-weight: 700; color: var(--text-main);">Snapchat</span>
+        </button>
+
+      </div>
+      
+      <button class="btn btn-outline" style="width: 100%; padding: 14px;" onclick="closeShareModal()">Cancel</button>
+    </div>
   </div>
 
   <div id="toast" class="toast">Saved!</div>
