@@ -639,6 +639,12 @@
       box-shadow: 0 0 0 4px var(--ring);
       background: var(--surface);
     }
+    
+    /* Locked Input Styling */
+    input[type="file"]:disabled {
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
 
     .item-row {
       display: grid;
@@ -1119,7 +1125,7 @@
         VendSlip
       </div>
       <div class="app-actions">
-        <button class="btn-pro-small" onclick="document.getElementById('proModal').classList.add('active')">
+        <button class="btn-pro-small" id="proBtn" onclick="document.getElementById('proModal').classList.add('active')">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg>
           PRO
         </button>
@@ -1140,7 +1146,7 @@
             <input type="text" id="bizName" value="Ada's Thrifts" oninput="updatePreview()">
           </div>
           <div class="form-group">
-            <label>Upload Logo</label>
+            <label id="logoLabel">Upload Logo <span style="color: var(--primary); font-size: 0.65rem; margin-left: 8px;">(PRO ONLY)</span></label>
             <input type="file" id="logoInput" accept="image/*" onchange="handleLogo(event)">
           </div>
         </div>
@@ -1274,19 +1280,24 @@
     </button>
   </div>
 
-  <!-- PRO MODAL -->
+  <!-- PRO MODAL (Updated with Email input) -->
   <div class="modal-overlay" id="proModal">
     <div class="modal-content">
       <h2 style="font-size: 1.5rem; font-weight: 800; letter-spacing: -0.03em; margin-bottom: 8px;">Upgrade to VendSlip Pro</h2>
-      <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 24px; line-height: 1.55;">Remove the watermark and unlock premium features.</p>
+      <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 24px; line-height: 1.55;">Remove the watermark, unlock custom logo uploads, and get the verified badge.</p>
 
-      <ul style="list-style: none; margin-bottom: 28px; font-size: 0.92rem; line-height: 2;">
+      <ul style="list-style: none; margin-bottom: 24px; font-size: 0.92rem; line-height: 2;">
         <li style="display: flex; align-items: center; gap: 10px;"><span style="color: var(--primary); font-weight: 800;">✓</span> Remove VendSlip Watermark</li>
         <li style="display: flex; align-items: center; gap: 10px;"><span style="color: var(--primary); font-weight: 800;">✓</span> Upload Your Business Logo</li>
         <li style="display: flex; align-items: center; gap: 10px;"><span style="color: var(--primary); font-weight: 800;">✓</span> Verified Merchant Badge</li>
       </ul>
 
-      <a href="https://paystack.shop/pay/30uz0wj30l?return_url=https://vendslip.com.ng?success=true&sig=VendSlipSecret99" class="btn btn-primary" style="display: block; text-align: center; text-decoration: none; margin-bottom: 12px;">Upgrade Now — ₦2,000</a>
+      <div style="margin-bottom: 20px;">
+        <label style="display: block; font-size: 0.72rem; font-weight: 700; color: var(--text-muted); margin-bottom: 8px; letter-spacing: 0.06em; text-transform: uppercase;">Your Email Address</label>
+        <input type="email" id="proEmail" placeholder="you@example.com" style="width: 100%; padding: 14px; background: var(--bg); border: 1px solid var(--border); border-radius: 10px; color: var(--text-main); font-family: inherit; font-size: 0.95rem; outline: none;">
+      </div>
+
+      <button class="btn btn-primary" onclick="initiateUpgrade()" style="margin-bottom: 12px; padding: 14px;">Pay ₦2,000 & Upgrade</button>
       <button class="btn btn-outline" style="width: 100%; margin-bottom: 8px;" onclick="restorePurchase()">Restore Purchase</button>
       <button class="btn btn-outline" style="width: 100%;" onclick="document.getElementById('proModal').classList.remove('active')">Maybe Later</button>
     </div>

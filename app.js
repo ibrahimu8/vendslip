@@ -6,6 +6,7 @@ const db = window.supabase.createClient(supabaseUrl, supabaseKey);
 // --- Utilities ---
 const $ = (id) => document.getElementById(id);
 const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+let isUserPro = false;
 
 function showToast(msg, variant = 'default') {
   const t = $('toast');
@@ -24,7 +25,7 @@ function generateRef() {
   return '#VS-' + s;
 }
 
-// --- Paystack / Pro ---
+// --- Paystack & Pro System ---
 async function checkProStatus() {
   const email = localStorage.getItem('vendslip_email');
   if (!email) return false;
@@ -35,26 +36,66 @@ async function checkProStatus() {
 }
 
 function unlockProUI() {
+  isUserPro = true;
+  
+  // Update Watermark
   const watermark = $('receiptWatermark');
   if (watermark) {
     watermark.innerHTML = '<span style="color:#10B981;font-weight:800;letter-spacing:0.12em;">✔ VERIFIED MERCHANT</span>';
   }
+
+  // Unlock Logo Upload UI
+  const lockIcon = $('logoLock');
+  const uploadInput = $('logoInput');
+  const label = $('logoLabel');
+  
+  if (lockIcon) lockIcon.style.display = 'none';
+  if (uploadInput) uploadInput.disabled = false;
+  if (label) label.innerHTML = 'Upload Logo';
+  
+  // Update Pro Button
+  const proBtn = $('proBtn');
+  if (proBtn) {
+    proBtn.innerHTML = '⭐ PRO';
+    proBtn.style.background = 'var(--primary)';
+    proBtn.style.boxShadow = '0 6px 16px -6px rgba(16, 185, 129, 0.5)';
+  }
+}
+
+function lockProUI() {
+  isUserPro = false;
+  const lockIcon = $('logoLock');
+  const uploadInput = $('logoInput');
+  const label = $('logoLabel');
+  
+  if (lockIcon) lockIcon.style.display = 'inline';
+  if (uploadInput) {
+    uploadInput.disabled = true;
+    uploadInput.value = ''; // clear any file
+  }
+  if (label) label.innerHTML = 'Upload Logo <span style="color: var(--primary); font-size: 0.65rem; margin-left: 8px;">(PRO ONLY)</span>';
 }
 
 async function checkPaystackRedirect() {
   const urlParams = new URLSearchParams(window.location.search);
   const success = urlParams.get('success');
   const sig = urlParams.get('sig');
+  
   if (success === 'true' && sig && sig.startsWith('VendSlipSecret99')) {
-    let email = localStorage.getItem('vendslip_email');
+    // 1. Get email saved BEFORE redirect, or prompt as fallback
+    let email = localStorage.getItem('vendslip_pending_email') || localStorage.getItem('vendslip_email');
+    
     if (!email) {
       email = prompt("Payment successful! Enter the email you used to pay:");
     }
+    
     if (email) {
       const clean = email.trim().toLowerCase();
       const { error } = await db.from('pro_users').insert([{ email: clean }]);
-      if (!error || error.code === '23505') {
+      
+      if (!error || error.code === '23505') { // 23505 means already exists (which is fine)
         localStorage.setItem('vendslip_email', clean);
+        localStorage.removeItem('vendslip_pending_email');
         unlockProUI();
         showToast('Pro unlocked — welcome aboard.', 'success');
       } else {
@@ -80,6 +121,24 @@ async function restorePurchase() {
   }
 }
 
+// Intercept the Paystack button to save email first
+function initiateUpgrade() {
+  const emailInput = $('proEmail');
+  const email = emailInput.value.trim().toLowerCase();
+  
+  if (!email || !email.includes('@')) {
+    showToast('Please enter a valid email address.', 'error');
+    emailInput.focus();
+    return;
+  }
+  
+  // Save for when they return
+  localStorage.setItem('vendslip_pending_email', email);
+  
+  // Redirect to Paystack
+  window.location.href = 'https://paystack.shop/pay/30uz0wj30l';
+}
+
 // --- Navigation & Initialization ---
 async function launchApp() {
   $('landing-page').style.display = 'none';
@@ -92,8 +151,13 @@ async function launchApp() {
   }
 
   await checkPaystackRedirect();
-  const isPro = await checkProStatus();
-  if (isPro) unlockProUI();
+  
+  const hasPro = await checkProStatus();
+  if (hasPro) {
+    unlockProUI();
+  } else {
+    lockProUI();
+  }
 
   $('previewRef').textContent = generateRef();
   renderPreview();
@@ -282,6 +346,14 @@ function renderPreview() {
 }
 
 function handleLogo(event) {
+  // EXTRA SECURITY CHECK
+  if (!isUserPro) {
+    showToast('Upgrade to Pro to upload a logo.', 'error');
+    event.target.value = '';
+    $('proModal').classList.add('active');
+    return;
+  }
+
   const file = event.target.files[0];
   if (!file) return;
   if (file.size > 4 * 1024 * 1024) {
