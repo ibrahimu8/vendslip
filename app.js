@@ -3,34 +3,62 @@ const supabaseUrl = 'https://heezhrngloeetexgltsw.supabase.co';
 const supabaseKey = 'sb_publishable_32VRz6cAoXbdH9p8Q5ihJQ_deDcMVCD';
 const db = window.supabase.createClient(supabaseUrl, supabaseKey);
 
-// --- Paystack Redirect & Pro Check ---
+// --- Utilities ---
+const $ = (id) => document.getElementById(id);
+const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+function showToast(msg, variant = 'default') {
+  const t = $('toast');
+  if (!t) return;
+  t.textContent = msg;
+  t.dataset.variant = variant;
+  t.classList.add('show');
+  clearTimeout(showToast._timer);
+  showToast._timer = setTimeout(() => t.classList.remove('show'), 3200);
+}
+
+function generateRef() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let s = '';
+  for (let i = 0; i < 5; i++) s += chars[Math.floor(Math.random() * chars.length)];
+  return '#VS-' + s;
+}
+
+// --- Paystack / Pro ---
 async function checkProStatus() {
   const email = localStorage.getItem('vendslip_email');
   if (!email) return false;
-  const { data, error } = await db.from('pro_users').select('email').eq('email', email).single();
-  return (data && !error);
+  try {
+    const { data, error } = await db.from('pro_users').select('email').eq('email', email).maybeSingle();
+    return !!(data && !error);
+  } catch { return false; }
 }
 
 function unlockProUI() {
-  const watermark = document.getElementById('receiptWatermark');
-  if(watermark) watermark.innerHTML = '<span style="color: #10B981; font-weight: 800; letter-spacing: 0.05em;">✔ VERIFIED MERCHANT</span>';
+  const watermark = $('receiptWatermark');
+  if (watermark) {
+    watermark.innerHTML = '<span style="color:#10B981;font-weight:800;letter-spacing:0.12em;">✔ VERIFIED MERCHANT</span>';
+  }
 }
 
 async function checkPaystackRedirect() {
   const urlParams = new URLSearchParams(window.location.search);
-  if (urlParams.has('success') && urlParams.get('sig') === 'VendSlipSecret99') {
+  const success = urlParams.get('success');
+  const sig = urlParams.get('sig');
+  if (success === 'true' && sig && sig.startsWith('VendSlipSecret99')) {
     let email = localStorage.getItem('vendslip_email');
     if (!email) {
-      email = prompt("Payment successful! Enter your email to save your Pro account:");
+      email = prompt("Payment successful! Enter the email you used to pay:");
     }
     if (email) {
-      const { error } = await db.from('pro_users').insert([{ email: email }]);
-      if (!error || error.code === '23505') { 
-        localStorage.setItem('vendslip_email', email);
+      const clean = email.trim().toLowerCase();
+      const { error } = await db.from('pro_users').insert([{ email: clean }]);
+      if (!error || error.code === '23505') {
+        localStorage.setItem('vendslip_email', clean);
         unlockProUI();
-        showToast('Pro unlocked successfully!');
+        showToast('Pro unlocked — welcome aboard.', 'success');
       } else {
-        showToast('Error saving account.');
+        showToast('Could not save account. Try Restore.', 'error');
       }
     }
     window.history.replaceState({}, document.title, window.location.pathname);
@@ -38,25 +66,25 @@ async function checkPaystackRedirect() {
 }
 
 async function restorePurchase() {
-  const email = prompt("Enter the email you used to pay:");
-  if (!email) return;
-  const { data, error } = await db.from('pro_users').select('email').eq('email', email).single();
+  const raw = prompt("Enter the email you used to pay:");
+  if (!raw) return;
+  const email = raw.trim().toLowerCase();
+  const { data, error } = await db.from('pro_users').select('email').eq('email', email).maybeSingle();
   if (data && !error) {
     localStorage.setItem('vendslip_email', email);
     unlockProUI();
-    document.getElementById('proModal').classList.remove('active');
-    showToast('Pro account restored!');
+    $('proModal').classList.remove('active');
+    showToast('Pro account restored.', 'success');
   } else {
-    showToast('Email not found.');
+    showToast('No Pro account found for that email.', 'error');
   }
 }
 
 // --- Navigation & Initialization ---
 async function launchApp() {
-  document.getElementById('landing-page').style.display = 'none';
-  document.getElementById('app-workspace').style.display = 'block';
+  $('landing-page').style.display = 'none';
+  $('app-workspace').style.display = 'block';
   window.scrollTo(0, 0);
-  requestGyroPermission();
 
   if (items.length === 0) {
     items.push({ name: 'Vintage Jacket', qty: 1, price: 15000 });
@@ -67,62 +95,74 @@ async function launchApp() {
   const isPro = await checkProStatus();
   if (isPro) unlockProUI();
 
-  updatePreview();
+  $('previewRef').textContent = generateRef();
+  renderPreview();
   initAppTilt();
+  requestGyroPermission();
 }
 
 function backToLanding() {
-  document.getElementById('app-workspace').style.display = 'none';
-  document.getElementById('landing-page').style.display = 'flex';
+  $('app-workspace').style.display = 'none';
+  $('landing-page').style.display = 'flex';
   window.scrollTo(0, 0);
 }
 
 function resetApp() {
-  if(!confirm("Start a new receipt?")) return;
+  if (!confirm("Start a new receipt?")) return;
   items = [{ name: '', qty: 1, price: 0 }];
   renderItems();
-  document.getElementById('bizName').value = '';
-  document.getElementById('buyerName').value = '';
-  document.getElementById('previewLogo').innerHTML = 'A';
-  document.getElementById('previewLogo').style.background = '#F8FAFC';
-  document.getElementById('previewLogo').style.border = '1px solid #E2E8F0';
-  updatePreview();
+  $('bizName').value = '';
+  $('buyerName').value = '';
+  const logo = $('previewLogo');
+  logo.innerHTML = 'A';
+  logo.style.background = '#F8FAFC';
+  logo.style.border = '1px solid #E2E8F0';
+  $('previewRef').textContent = generateRef();
+  renderPreview();
+  showToast('New receipt started.');
 }
 
 function scrollToPreview() {
-  const panel = document.getElementById('preview-panel');
-  const y = panel.getBoundingClientRect().top + window.scrollY - 80;
+  const panel = $('preview-panel');
+  const y = panel.getBoundingClientRect().top + window.scrollY - 84;
   window.scrollTo({ top: y, behavior: 'smooth' });
 }
 
+// --- Landing interactions ---
 window.addEventListener('scroll', () => {
-  const nav = document.getElementById('nav');
-  if (window.scrollY > 50) nav.classList.add('scrolled');
-  else nav.classList.remove('scrolled');
-});
+  const nav = $('nav');
+  if (!nav) return;
+  nav.classList.toggle('scrolled', window.scrollY > 40);
+}, { passive: true });
 
-// Scroll Reveal
 const observer = new IntersectionObserver((entries) => {
   entries.forEach(entry => {
-    if (entry.isIntersecting) entry.target.classList.add('active');
+    if (entry.isIntersecting) {
+      entry.target.classList.add('active');
+      observer.unobserve(entry.target);
+    }
   });
-}, { threshold: 0.1 });
+}, { threshold: 0.12, rootMargin: '0px 0px -60px 0px' });
 document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
 
-// Hero Tilt
-const heroTilt = document.getElementById('heroTilt');
+const heroTilt = $('heroTilt');
 const heroReceipt = document.querySelector('.hero-receipt');
-if (heroTilt) {
+if (heroTilt && heroReceipt && !prefersReducedMotion) {
+  let raf = null;
   heroTilt.addEventListener('mousemove', (e) => {
-    const rect = heroTilt.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    const rotateX = ((y - rect.height/2) / (rect.height/2)) * -15;
-    const rotateY = ((x - rect.width/2) / (rect.width/2)) * 15;
-    heroReceipt.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.05, 1.05, 1.05)`;
+    if (raf) return;
+    raf = requestAnimationFrame(() => {
+      const rect = heroTilt.getBoundingClientRect();
+      const x = (e.clientX - rect.left) / rect.width;
+      const y = (e.clientY - rect.top) / rect.height;
+      const rotateX = (y - 0.5) * -18;
+      const rotateY = (x - 0.5) * 20;
+      heroReceipt.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.06,1.06,1.06)`;
+      raf = null;
+    });
   });
   heroTilt.addEventListener('mouseleave', () => {
-    heroReceipt.style.transform = `rotateX(10deg) rotateY(-10deg) scale3d(1, 1, 1)`;
+    heroReceipt.style.transform = 'rotateX(10deg) rotateY(-10deg) scale3d(1,1,1)';
   });
 }
 
@@ -137,30 +177,35 @@ function addItem() {
 
 function removeItem(index) {
   items.splice(index, 1);
+  if (items.length === 0) items.push({ name: '', qty: 1, price: 0 });
   renderItems();
   updatePreview();
 }
 
+function escapeAttr(s) {
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
 function renderItems() {
-  const container = document.getElementById('itemsContainer');
+  const container = $('itemsContainer');
   container.innerHTML = '';
   items.forEach((item, index) => {
     const div = document.createElement('div');
     div.className = 'item-row';
     div.innerHTML = `
-      <div class="form-group" style="margin-bottom: 0;">
+      <div class="form-group" style="margin-bottom:0;">
         <label>Description</label>
-        <input type="text" value="${item.name}" oninput="updateItem(${index}, 'name', this.value)">
+        <input type="text" value="${escapeAttr(item.name)}" oninput="updateItem(${index}, 'name', this.value)">
       </div>
-      <div class="form-group" style="margin-bottom: 0;">
+      <div class="form-group" style="margin-bottom:0;">
         <label>Qty</label>
         <input type="number" value="${item.qty}" min="1" oninput="updateItem(${index}, 'qty', this.value)">
       </div>
-      <div class="form-group" style="margin-bottom: 0;">
+      <div class="form-group" style="margin-bottom:0;">
         <label>Price</label>
         <input type="number" value="${item.price}" min="0" oninput="updateItem(${index}, 'price', this.value)">
       </div>
-      <button class="remove-item-btn" onclick="removeItem(${index})">×</button>
+      <button class="remove-item-btn" onclick="removeItem(${index})" aria-label="Remove item">×</button>
     `;
     container.appendChild(div);
   });
@@ -173,66 +218,80 @@ function updateItem(index, field, value) {
   updatePreview();
 }
 
+let previewFrame = null;
 function updatePreview() {
-  const currency = document.getElementById('currency').value;
-  const bizName = document.getElementById('bizName').value || 'My Business';
-  const buyerName = document.getElementById('buyerName').value || 'Customer';
-  const deliveryFee = parseFloat(document.getElementById('deliveryFee').value) || 0;
-  const status = document.getElementById('status').value;
-  
-  const bankName = document.getElementById('bankName').value || '-';
-  const accNumber = document.getElementById('accNumber').value || '-';
-  const accName = document.getElementById('accName').value || '-';
+  if (previewFrame) cancelAnimationFrame(previewFrame);
+  previewFrame = requestAnimationFrame(renderPreview);
+}
 
-  document.getElementById('previewBizName').textContent = bizName;
-  document.getElementById('previewBuyer').textContent = buyerName;
-  document.getElementById('previewStatus').textContent = status;
-  document.getElementById('previewDate').textContent = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
-  
-  if (!document.getElementById('previewLogo').innerHTML.includes('img')) {
-    document.getElementById('previewLogo').textContent = bizName.charAt(0).toUpperCase();
+function renderPreview() {
+  const currency = $('currency').value;
+  const bizName = $('bizName').value.trim() || 'My Business';
+  const buyerName = $('buyerName').value.trim() || 'Customer';
+  const deliveryFee = parseFloat($('deliveryFee').value) || 0;
+  const status = $('status').value;
+
+  const bankName = $('bankName').value.trim() || '—';
+  const accNumber = $('accNumber').value.trim() || '—';
+  const accName = $('accName').value.trim() || '—';
+
+  $('previewBizName').textContent = bizName;
+  $('previewBuyer').textContent = buyerName;
+  $('previewStatus').textContent = status;
+  $('previewDate').textContent = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+
+  const logoEl = $('previewLogo');
+  if (!logoEl.innerHTML.includes('img')) {
+    logoEl.textContent = bizName.charAt(0).toUpperCase();
   }
 
-  const stamp = document.getElementById('receiptStamp');
-  stamp.textContent = status;
-  stamp.style.animation = 'none';
-  stamp.offsetHeight;
-  stamp.style.animation = null;
+  const stamp = $('receiptStamp');
+  if (stamp.textContent !== status) {
+    stamp.textContent = status;
+    stamp.style.animation = 'none';
+    void stamp.offsetHeight;
+    stamp.style.animation = '';
+  }
 
-  const payBox = document.getElementById('receiptPaymentBox');
+  const payBox = $('receiptPaymentBox');
   if (status === 'PAID') {
     payBox.style.display = 'none';
   } else {
     payBox.style.display = 'block';
-    document.getElementById('rBankName').textContent = bankName;
-    document.getElementById('rAccNumber').textContent = accNumber;
-    document.getElementById('rAccName').textContent = accName;
+    $('rBankName').textContent = bankName;
+    $('rAccNumber').textContent = accNumber;
+    $('rAccName').textContent = accName;
   }
 
   let subtotal = 0;
-  const tbody = document.getElementById('previewItems');
-  tbody.innerHTML = '';
-  
+  const tbody = $('previewItems');
+  const rows = [];
   items.forEach(item => {
     if (item.name.trim() !== '' && item.price > 0) {
       const total = item.qty * item.price;
       subtotal += total;
-      tbody.innerHTML += `<tr><td>${item.name}</td><td>${item.qty}</td><td>${currency}${total.toLocaleString()}</td></tr>`;
+      rows.push(`<tr><td>${escapeAttr(item.name)}</td><td>${item.qty}</td><td>${currency}${total.toLocaleString()}</td></tr>`);
     }
   });
+  tbody.innerHTML = rows.join('') || '<tr><td colspan="3" style="color:#94A3B8;text-align:center;padding:16px 0;">No items yet</td></tr>';
 
   const grandTotal = subtotal + deliveryFee;
-  document.getElementById('previewSubtotal').textContent = currency + subtotal.toLocaleString();
-  document.getElementById('previewDelivery').textContent = currency + deliveryFee.toLocaleString();
-  document.getElementById('previewTotal').textContent = currency + grandTotal.toLocaleString();
+  $('previewSubtotal').textContent = currency + subtotal.toLocaleString();
+  $('previewDelivery').textContent = currency + deliveryFee.toLocaleString();
+  $('previewTotal').textContent = currency + grandTotal.toLocaleString();
 }
 
 function handleLogo(event) {
   const file = event.target.files[0];
   if (!file) return;
+  if (file.size > 4 * 1024 * 1024) {
+    showToast('Logo must be under 4MB.', 'error');
+    event.target.value = '';
+    return;
+  }
   const reader = new FileReader();
   reader.onload = (e) => {
-    const logoDiv = document.getElementById('previewLogo');
+    const logoDiv = $('previewLogo');
     logoDiv.innerHTML = `<img src="${e.target.result}" alt="Logo">`;
     logoDiv.style.background = 'transparent';
     logoDiv.style.border = 'none';
@@ -241,116 +300,195 @@ function handleLogo(event) {
 }
 
 function toggleWorkspaceTheme() {
-  const app = document.getElementById('app-workspace');
-  const icon = document.getElementById('themeIcon');
-  if (app.getAttribute('data-theme') === 'light') {
-    app.setAttribute('data-theme', 'dark');
-    icon.innerHTML = `<circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>`;
-  } else {
-    app.setAttribute('data-theme', 'light');
+  const app = $('app-workspace');
+  const icon = $('themeIcon');
+  const isDark = app.getAttribute('data-theme') === 'dark';
+  app.setAttribute('data-theme', isDark ? 'light' : 'dark');
+  if (isDark) {
     icon.innerHTML = `<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>`;
+  } else {
+    icon.innerHTML = `<circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>`;
   }
 }
 
-// --- Smooth Gyroscope & Tilt ---
-function requestGyroPermission() {
-  if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
-    DeviceOrientationEvent.requestPermission().then(p => { if (p === 'granted') window.addEventListener('deviceorientation', handleGyro); }).catch(console.error);
-  } else {
-    window.addEventListener('deviceorientation', handleGyro);
-  }
-}
+// --- Smooth Gyro ---
+let gyroEnabled = false;
+let gyroTargetX = 0, gyroTargetY = 0;
+let gyroCurrentX = 0, gyroCurrentY = 0;
+let gyroNeedsInit = true;
+let gyroBaseBeta = 0, gyroBaseGamma = 0;
 
 function handleGyro(event) {
-  const card = document.getElementById('receiptCard');
+  if (event.beta == null || event.gamma == null) return;
+  if (gyroNeedsInit) {
+    gyroBaseBeta = event.beta;
+    gyroBaseGamma = event.gamma;
+    gyroNeedsInit = false;
+  }
+  const b = event.beta - gyroBaseBeta;
+  const g = event.gamma - gyroBaseGamma;
+  const MAX = 14;
+  gyroTargetX = Math.max(-MAX, Math.min(MAX, b * 0.22));
+  gyroTargetY = Math.max(-MAX, Math.min(MAX, g * 0.22));
+}
+
+function startGyroLoop() {
+  if (gyroEnabled) return;
+  const card = $('receiptCard');
   if (!card) return;
-  const beta = event.beta;
-  const gamma = event.gamma;
-  if (beta === null || gamma === null) return;
-  
-  // Softer clamp values for smoothness
-  const rotateX = Math.max(-10, Math.min(10, (beta - 45) * 0.15));
-  const rotateY = Math.max(-10, Math.min(10, gamma * 0.15));
-  card.style.transform = `perspective(1200px) rotateX(${-rotateX}deg) rotateY(${rotateY}deg)`;
+  gyroEnabled = true;
+
+  let lastTs = 0;
+  const lerp = 0.08;
+
+  function tick(ts) {
+    if (!gyroEnabled) return;
+    if (ts - lastTs < 11) { requestAnimationFrame(tick); return; }
+    lastTs = ts;
+    gyroCurrentX += (gyroTargetX - gyroCurrentX) * lerp;
+    gyroCurrentY += (gyroTargetY - gyroCurrentY) * lerp;
+    if (Math.abs(gyroTargetX - gyroCurrentX) > 0.01 || Math.abs(gyroTargetY - gyroCurrentY) > 0.01) {
+      card.style.transform = `perspective(1400px) rotateX(${-gyroCurrentX}deg) rotateY(${gyroCurrentY}deg)`;
+    }
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+}
+
+function requestGyroPermission() {
+  if (typeof DeviceOrientationEvent === 'undefined') return;
+  if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+    const once = () => {
+      DeviceOrientationEvent.requestPermission()
+        .then(p => {
+          if (p === 'granted') {
+            gyroNeedsInit = true;
+            window.addEventListener('deviceorientation', handleGyro, { passive: true });
+            startGyroLoop();
+          }
+        })
+        .catch(() => {});
+      window.removeEventListener('touchstart', once);
+    };
+    window.addEventListener('touchstart', once, { once: true, passive: true });
+  } else if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
+    gyroNeedsInit = true;
+    window.addEventListener('deviceorientation', handleGyro, { passive: true });
+    startGyroLoop();
+  }
 }
 
 function initAppTilt() {
-  const card = document.getElementById('receiptCard');
+  const card = $('receiptCard');
+  if (!card || prefersReducedMotion) return;
+  const isTouch = matchMedia('(pointer: coarse)').matches;
+  if (isTouch) return;
+
+  let raf = null;
   card.addEventListener('mousemove', (e) => {
-    const rect = card.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    const rotateX = ((y - rect.height/2) / (rect.height/2)) * -8;
-    const rotateY = ((x - rect.width/2) / (rect.width/2)) * 8;
-    card.style.transform = `perspective(1200px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02, 1.02, 1.02)`;
+    if (raf) return;
+    raf = requestAnimationFrame(() => {
+      const rect = card.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      const rotateX = ((y - rect.height / 2) / (rect.height / 2)) * -7;
+      const rotateY = ((x - rect.width / 2) / (rect.width / 2)) * 7;
+      card.style.transform = `perspective(1400px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.015,1.015,1.015)`;
+      raf = null;
+    });
   });
   card.addEventListener('mouseleave', () => {
-    card.style.transform = `perspective(1200px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)`;
+    card.style.transform = 'perspective(1400px) rotateX(0deg) rotateY(0deg) scale3d(1,1,1)';
   });
 }
 
-// --- Export & WhatsApp Share ---
-async function downloadReceipt() {
-  const receipt = document.getElementById('receiptCard');
+// --- Export & Share ---
+async function renderReceiptCanvas() {
+  const receipt = $('receiptCard');
   const originalTransform = receipt.style.transform;
+  const originalWillChange = receipt.style.willChange;
   receipt.style.transform = 'none';
+  receipt.style.willChange = 'auto';
   try {
     if (document.fonts && document.fonts.ready) await document.fonts.ready;
-    const canvas = await html2canvas(receipt, { scale: 3, backgroundColor: '#ffffff', useCORS: true });
+    const canvas = await html2canvas(receipt, {
+      scale: 3,
+      backgroundColor: '#ffffff',
+      useCORS: true,
+      logging: false
+    });
+    return {
+      canvas,
+      cleanup: () => {
+        receipt.style.transform = originalTransform;
+        receipt.style.willChange = originalWillChange;
+      }
+    };
+  } catch (err) {
+    receipt.style.transform = originalTransform;
+    receipt.style.willChange = originalWillChange;
+    throw err;
+  }
+}
+
+async function downloadReceipt() {
+  try {
+    const { canvas, cleanup } = await renderReceiptCanvas();
     const link = document.createElement('a');
-    link.download = 'VendSlip-Receipt.png';
+    const ref = ($('previewRef').textContent || 'receipt').replace('#', '');
+    link.download = `VendSlip-${ref}.png`;
     link.href = canvas.toDataURL('image/png');
     link.click();
-    showToast('Receipt saved!');
+    showToast('Receipt saved.', 'success');
+    cleanup();
   } catch (err) {
-    showToast('Error generating image.');
-  } finally {
-    receipt.style.transform = originalTransform;
+    showToast('Could not generate image.', 'error');
   }
 }
 
 async function shareWhatsApp() {
-  const receipt = document.getElementById('receiptCard');
-  const originalTransform = receipt.style.transform;
-  receipt.style.transform = 'none';
-
   try {
-    if (document.fonts && document.fonts.ready) await document.fonts.ready;
-    const canvas = await html2canvas(receipt, { scale: 3, backgroundColor: '#ffffff', useCORS: true });
-    receipt.style.transform = originalTransform;
-
+    const { canvas, cleanup } = await renderReceiptCanvas();
     canvas.toBlob(async (blob) => {
+      cleanup();
+      if (!blob) { showToast('Could not generate image.', 'error'); return; }
       const file = new File([blob], 'VendSlip-Receipt.png', { type: 'image/png' });
-      
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
         try {
-          await navigator.share({
-            files: [file],
-            title: 'Receipt',
-            text: 'Here is your receipt.'
-          });
+          await navigator.share({ files: [file], title: 'Your Receipt', text: 'Here is your receipt.' });
+          showToast('Shared.', 'success');
         } catch (err) {
-          if (err.name !== 'AbortError') {
-            showToast('Share cancelled.');
-          }
+          if (err.name === 'AbortError') showToast('Share cancelled.');
+          else fallbackDownload(blob);
         }
       } else {
-        const link = document.createElement('a');
-        link.download = 'VendSlip-Receipt.png';
-        link.href = URL.createObjectURL(blob);
-        link.click();
-        showToast('Image downloaded. Open WhatsApp to send.');
+        fallbackDownload(blob);
       }
     }, 'image/png');
   } catch (err) {
-    receipt.style.transform = originalTransform;
-    showToast('Error generating image.');
+    showToast('Could not generate image.', 'error');
   }
 }
 
-function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 3000);
+function fallbackDownload(blob) {
+  const link = document.createElement('a');
+  link.download = 'VendSlip-Receipt.png';
+  link.href = URL.createObjectURL(blob);
+  link.click();
+  setTimeout(() => URL.revokeObjectURL(link.href), 2000);
+  showToast('Image downloaded — open WhatsApp to send.');
 }
+
+// --- Modal wiring ---
+document.addEventListener('DOMContentLoaded', () => {
+  const modal = $('proModal');
+  if (modal) {
+    const mo = new MutationObserver(() => {
+      document.body.classList.toggle('modal-open', modal.classList.contains('active'));
+    });
+    mo.observe(modal, { attributes: true, attributeFilter: ['class'] });
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) modal.classList.remove('active');
+    });
+  }
+});
