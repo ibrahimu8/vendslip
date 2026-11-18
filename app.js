@@ -1,3 +1,14 @@
+// --- Paystack Redirect Security Check ---
+// Check if the URL has the success signature
+const urlParams = new URLSearchParams(window.location.search);
+if (urlParams.has('success') && urlParams.get('sig') === 'VendSlipSecret99') {
+  localStorage.setItem('vendslip_pro', 'true');
+  // We will handle the UI change inside the app launch
+} else if (urlParams.has('success')) {
+  // If they try to fake it without the signature, remove pro
+  localStorage.removeItem('vendslip_pro');
+}
+
 // --- Navigation & Initialization ---
 function launchApp() {
   document.getElementById('landing-page').style.display = 'none';
@@ -9,6 +20,14 @@ function launchApp() {
     items.push({ name: 'Vintage Jacket', qty: 1, price: 15000 });
     renderItems();
   }
+
+  // Check if Pro is active
+  const isPro = localStorage.getItem('vendslip_pro') === 'true';
+  if (isPro) {
+    const watermark = document.getElementById('receiptWatermark');
+    watermark.innerHTML = '<span style="color: #10B981; font-weight: 800; letter-spacing: 0.05em;">✔ VERIFIED MERCHANT</span>';
+  }
+
   updatePreview();
   initAppTilt();
 }
@@ -263,7 +282,6 @@ async function shareWhatsApp() {
     canvas.toBlob(async (blob) => {
       const file = new File([blob], 'VendSlip-Receipt.png', { type: 'image/png' });
       
-      // Check if Web Share API with files is supported (Mobile)
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
         try {
           await navigator.share({
@@ -277,7 +295,6 @@ async function shareWhatsApp() {
           }
         }
       } else {
-        // Fallback for Desktop Browsers
         const link = document.createElement('a');
         link.download = 'VendSlip-Receipt.png';
         link.href = URL.createObjectURL(blob);
